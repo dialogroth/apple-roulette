@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>オンラインチャット</title>
+</head>
+<body>
+
+<h1>オンラインチャット</h1>
+
+<input type="text" id="message">
+<button onclick="sendMessage()">送信</button>
+
+<div id="chat"></div>
+
+<script>
+
+    const socket = new WebSocket("ws://" + location.host + "/ws");
+
+    socket.onmessage = (event) => {
+
+        const div = document.getElementById("chat");
+
+        div.innerHTML += "<p>" + event.data + "</p>";
+    };
+
+    function sendMessage() {
+
+        const input = document.getElementById("message");
+
+        socket.send(input.value);
+
+        input.value = "";
+    }
+
+</script>
+
+</body>
+</html>
