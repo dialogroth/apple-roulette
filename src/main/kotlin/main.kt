@@ -335,7 +335,7 @@ suspend fun handleGameEvent(
         ClientEvents.ACTION_DRAW_CARD -> {
             val gameId = gamesByRoom[roomId] ?: return
             val gameState = games[gameId] ?: return
-            handleActionDrawCard(gameState, playerId, roomId, wsManager, games, gamesByRoom)
+            handleActionDrawCard(gameState, playerId, roomId, wsManager, games, gamesByRoom, rooms)
         }
         ClientEvents.ACTION_USE_CARD -> {
             val gameId = gamesByRoom[roomId] ?: return
@@ -343,49 +343,50 @@ suspend fun handleGameEvent(
             val cardId = (message.payload["cardId"] as? String)?.let { UUID.fromString(it) } ?: return
             @Suppress("UNCHECKED_CAST")
             val params = (message.payload["params"] as? Map<String, Any?>) ?: emptyMap()
-            handleActionUseCard(gameState, playerId, cardId, params, roomId, wsManager, games, gamesByRoom)
+            handleActionUseCard(gameState, playerId, cardId, params, roomId, wsManager, games, gamesByRoom, rooms)
         }
         ClientEvents.ACTION_DISCARD_CARD -> {
             val gameId = gamesByRoom[roomId] ?: return
             val gameState = games[gameId] ?: return
             val cardId = (message.payload["cardId"] as? String)?.let { UUID.fromString(it) } ?: return
-            handleActionDiscardCard(gameState, playerId, cardId, roomId, wsManager, games, gamesByRoom)
+            handleActionDiscardCard(gameState, playerId, cardId, roomId, wsManager, games, gamesByRoom, rooms)
         }
         ClientEvents.ACTION_EXCHANGE_HAND -> {
             val gameId = gamesByRoom[roomId] ?: return
             val gameState = games[gameId] ?: return
             val targetPlayerId = (message.payload["targetPlayerId"] as? String)?.let { UUID.fromString(it) } ?: return
-            handleActionExchangeHand(gameState, playerId, targetPlayerId, roomId, wsManager, games, gamesByRoom)
+            handleActionExchangeHand(gameState, playerId, targetPlayerId, roomId, wsManager, games, gamesByRoom, rooms)
         }
         ClientEvents.ACTION_EXCHANGE_APPLE -> {
             val gameId = gamesByRoom[roomId] ?: return
             val gameState = games[gameId] ?: return
             val targetPlayerId = (message.payload["targetPlayerId"] as? String)?.let { UUID.fromString(it) } ?: return
-            handleActionExchangeApple(gameState, playerId, targetPlayerId, roomId, wsManager, games, gamesByRoom)
+            handleActionExchangeApple(gameState, playerId, targetPlayerId, roomId, wsManager, games, gamesByRoom, rooms)
         }
         ClientEvents.ACTION_CHECK_OWN_APPLE -> {
             val gameId = gamesByRoom[roomId] ?: return
             val gameState = games[gameId] ?: return
-            handleActionCheckOwnApple(gameState, playerId, roomId, wsManager, games, gamesByRoom)
+            handleActionCheckOwnApple(gameState, playerId, roomId, wsManager, games, gamesByRoom, rooms)
         }
         ClientEvents.ACTION_USE_ABILITY -> {
             val gameId = gamesByRoom[roomId] ?: return
             val gameState = games[gameId] ?: return
             @Suppress("UNCHECKED_CAST")
             val params = (message.payload["params"] as? Map<String, Any?>) ?: emptyMap()
-            handleActionUseAbility(gameState, playerId, params, roomId, wsManager, games, gamesByRoom)
+            handleActionUseAbility(gameState, playerId, params, roomId, wsManager, games, gamesByRoom, rooms)
         }
         ClientEvents.RESPONSE_PREFERENCE -> {
             val gameId = gamesByRoom[roomId] ?: return
             val gameState = games[gameId] ?: return
             val answer = message.payload["answer"] as? Boolean ?: return
-            handleResponsePreference(gameState, playerId, answer, roomId, wsManager, games)
+            val questionType = message.payload["questionType"] as? String ?: "APPLE"
+            handleResponsePreference(gameState, playerId, answer, questionType, roomId, wsManager, games, gamesByRoom, rooms)
         }
         ClientEvents.RESPONSE_QUEEN_EXCHANGE -> {
             val gameId = gamesByRoom[roomId] ?: return
             val gameState = games[gameId] ?: return
             val targetPlayerId = (message.payload["targetPlayerId"] as? String)?.let { UUID.fromString(it) } ?: return
-            handleResponseQueenExchange(gameState, playerId, targetPlayerId, roomId, wsManager, games, gamesByRoom)
+            handleResponseQueenExchange(gameState, playerId, targetPlayerId, roomId, wsManager, games, gamesByRoom, rooms)
         }
         else -> {
             println("未処理のイベント: ${message.type}")
@@ -436,7 +437,8 @@ suspend fun handleActionDrawCard(
     roomId: UUID,
     wsManager: WebSocketManager,
     games: MutableMap<UUID, GameState>,
-    gamesByRoom: MutableMap<UUID, UUID>
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
 ) {
     if (gameState.turnOrder[gameState.currentTurnIndex] != playerId) {
         wsManager.sendToPlayer(playerId, WsHelpers.errorMessage(ErrorCodes.NOT_YOUR_TURN, "自分の手番ではありません"))
@@ -464,7 +466,8 @@ suspend fun handleActionUseCard(
     roomId: UUID,
     wsManager: WebSocketManager,
     games: MutableMap<UUID, GameState>,
-    gamesByRoom: MutableMap<UUID, UUID>
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
 ) {
     if (gameState.turnOrder[gameState.currentTurnIndex] != playerId) {
         wsManager.sendToPlayer(playerId, WsHelpers.errorMessage(ErrorCodes.NOT_YOUR_TURN, "自分の手番ではありません"))
@@ -474,26 +477,80 @@ suspend fun handleActionUseCard(
     val card = gameState.cards[cardId] ?: return
 
     val (updatedState, error) = GameActionHandler.useCard(gameState, playerId, cardId, params)
+
+    // 騎士無効化チェック
+    if (error == "KNIGHT_BLOCKED") {
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyUseCardMessage(playerId.toString(), card.cardType.toString(), params))
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyKnightBlockedMessage(params["targetPlayerId"].toString()))
+
+        val nextState = GameActionHandler.advanceTurn(gameState)
+        games[gameState.gameId] = nextState
+        GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
+
+        val finalState = checkAndHandlePhaseTransition(nextState, roomId, wsManager, games, gamesByRoom, rooms)
+        games[gameState.gameId] = finalState
+        return
+    }
+
     if (error != null) {
         wsManager.sendToPlayer(playerId, WsHelpers.errorMessage(ErrorCodes.INVALID_PHASE, error))
         return
     }
 
-    val nextState = GameEngine.getNextTurnState(updatedState)
-    games[gameState.gameId] = nextState
+    // フェイズ移行チェック
+    if (updatedState.phase == GamePhase.LAST_TURN && gameState.phase == GamePhase.STORY) {
+        wsManager.broadcastToRoom(roomId, WsHelpers.phaseChangedMessage("LAST_TURN", playerId.toString()))
+    }
 
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyUseCardMessage(playerId.toString(), card.cardType.toString(), params))
 
-    // アップルルーレット使用時はブラックへの更新を送信
+    // 好み質問カードの場合
+    if (card.cardType in listOf(CardType.APPLE_QUESTION, CardType.MUSHROOM_QUESTION)) {
+        val targetPlayerId = (params["targetPlayerId"] as? String)?.let { UUID.fromString(it) }
+        if (targetPlayerId != null) {
+            val questionType = if (card.cardType == CardType.APPLE_QUESTION) "APPLE" else "MUSHROOM"
+            wsManager.sendToPlayer(
+                targetPlayerId,
+                WsHelpers.requestPreferenceMessage(questionType, playerId.toString())
+            )
+            games[gameState.gameId] = updatedState
+            GameInitializer.sendGameStateSync(roomId, updatedState, wsManager)
+            return
+        }
+    }
+
+    val beforeIndex = updatedState.currentTurnIndex
+    val nextState = GameActionHandler.advanceTurn(updatedState)
+
+    // スキップ通知
+    val skippedPlayerIds = mutableListOf<UUID>()
+    var checkIndex = (beforeIndex + 1) % updatedState.turnOrder.size
+    while (checkIndex != nextState.currentTurnIndex) {
+        val skippedPlayer = updatedState.players[updatedState.turnOrder[checkIndex]]
+        if (skippedPlayer != null && skippedPlayer.isAlive) {
+            skippedPlayerIds.add(updatedState.turnOrder[checkIndex])
+        }
+        checkIndex = (checkIndex + 1) % updatedState.turnOrder.size
+    }
+    skippedPlayerIds.forEach { skippedId ->
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyPlayerSkippedMessage(skippedId.toString()))
+    }
+
     if (card.cardType in listOf(CardType.ROULETTE_1, CardType.ROULETTE_2, CardType.ROULETTE_3)) {
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyRouletteMessage(
+            cardType = card.cardType.toString(),
+            direction = params["direction"] as? String ?: "",
+            steps = when (card.cardType) { CardType.ROULETTE_1 -> 1; CardType.ROULETTE_2 -> 2; else -> 3 },
+            excludedPlayerIds = nextState.players.values.filter { !it.isAlive }.map { it.playerId.toString() }
+        ))
         GameInitializer.sendBlackAppleUpdate(nextState, roomId, wsManager)
     }
 
+    games[gameState.gameId] = nextState
     GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
-    wsManager.broadcastToRoom(
-        roomId,
-        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
-    )
+
+    val finalState = checkAndHandlePhaseTransition(nextState, roomId, wsManager, games, gamesByRoom, rooms)
+    games[gameState.gameId] = finalState
 }
 
 suspend fun handleActionDiscardCard(
@@ -503,7 +560,8 @@ suspend fun handleActionDiscardCard(
     roomId: UUID,
     wsManager: WebSocketManager,
     games: MutableMap<UUID, GameState>,
-    gamesByRoom: MutableMap<UUID, UUID>
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
 ) {
     if (gameState.turnOrder[gameState.currentTurnIndex] != playerId) {
         wsManager.sendToPlayer(playerId, WsHelpers.errorMessage(ErrorCodes.NOT_YOUR_TURN, "自分の手番ではありません"))
@@ -518,15 +576,29 @@ suspend fun handleActionDiscardCard(
         return
     }
 
-    val nextState = GameEngine.getNextTurnState(updatedState)
-    games[gameState.gameId] = nextState
+    val beforeIndex = updatedState.currentTurnIndex
+    val nextState = GameActionHandler.advanceTurn(updatedState)
 
+    // スキップ通知
+    val skippedPlayerIds = mutableListOf<UUID>()
+    var checkIndex = (beforeIndex + 1) % updatedState.turnOrder.size
+    while (checkIndex != nextState.currentTurnIndex) {
+        val skippedPlayer = updatedState.players[updatedState.turnOrder[checkIndex]]
+        if (skippedPlayer != null && skippedPlayer.isAlive) {
+            skippedPlayerIds.add(updatedState.turnOrder[checkIndex])
+        }
+        checkIndex = (checkIndex + 1) % updatedState.turnOrder.size
+    }
+    skippedPlayerIds.forEach { skippedId ->
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyPlayerSkippedMessage(skippedId.toString()))
+    }
+
+    games[gameState.gameId] = nextState
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyDiscardCardMessage(playerId.toString(), card.cardType.toString()))
     GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
-    wsManager.broadcastToRoom(
-        roomId,
-        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
-    )
+
+    val finalState = checkAndHandlePhaseTransition(nextState, roomId, wsManager, games, gamesByRoom, rooms)
+    games[gameState.gameId] = finalState
 }
 
 suspend fun handleActionExchangeHand(
@@ -536,7 +608,8 @@ suspend fun handleActionExchangeHand(
     roomId: UUID,
     wsManager: WebSocketManager,
     games: MutableMap<UUID, GameState>,
-    gamesByRoom: MutableMap<UUID, UUID>
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
 ) {
     if (gameState.turnOrder[gameState.currentTurnIndex] != playerId) {
         wsManager.sendToPlayer(playerId, WsHelpers.errorMessage(ErrorCodes.NOT_YOUR_TURN, "自分の手番ではありません"))
@@ -549,15 +622,29 @@ suspend fun handleActionExchangeHand(
         return
     }
 
-    val nextState = GameEngine.getNextTurnState(updatedState)
-    games[gameState.gameId] = nextState
+    val beforeIndex = updatedState.currentTurnIndex
+    val nextState = GameActionHandler.advanceTurn(updatedState)
 
+    // スキップ通知
+    val skippedPlayerIds = mutableListOf<UUID>()
+    var checkIndex = (beforeIndex + 1) % updatedState.turnOrder.size
+    while (checkIndex != nextState.currentTurnIndex) {
+        val skippedPlayer = updatedState.players[updatedState.turnOrder[checkIndex]]
+        if (skippedPlayer != null && skippedPlayer.isAlive) {
+            skippedPlayerIds.add(updatedState.turnOrder[checkIndex])
+        }
+        checkIndex = (checkIndex + 1) % updatedState.turnOrder.size
+    }
+    skippedPlayerIds.forEach { skippedId ->
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyPlayerSkippedMessage(skippedId.toString()))
+    }
+
+    games[gameState.gameId] = nextState
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyExchangeHandMessage(playerId.toString(), targetPlayerId.toString()))
     GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
-    wsManager.broadcastToRoom(
-        roomId,
-        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
-    )
+
+    val finalState = checkAndHandlePhaseTransition(nextState, roomId, wsManager, games, gamesByRoom, rooms)
+    games[gameState.gameId] = finalState
 }
 
 suspend fun handleActionExchangeApple(
@@ -567,7 +654,8 @@ suspend fun handleActionExchangeApple(
     roomId: UUID,
     wsManager: WebSocketManager,
     games: MutableMap<UUID, GameState>,
-    gamesByRoom: MutableMap<UUID, UUID>
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
 ) {
     if (gameState.turnOrder[gameState.currentTurnIndex] != playerId) {
         wsManager.sendToPlayer(playerId, WsHelpers.errorMessage(ErrorCodes.NOT_YOUR_TURN, "自分の手番ではありません"))
@@ -580,16 +668,30 @@ suspend fun handleActionExchangeApple(
         return
     }
 
-    val nextState = GameEngine.getNextTurnState(updatedState)
-    games[gameState.gameId] = nextState
+    val beforeIndex = updatedState.currentTurnIndex
+    val nextState = GameActionHandler.advanceTurn(updatedState)
 
+    // スキップ通知
+    val skippedPlayerIds = mutableListOf<UUID>()
+    var checkIndex = (beforeIndex + 1) % updatedState.turnOrder.size
+    while (checkIndex != nextState.currentTurnIndex) {
+        val skippedPlayer = updatedState.players[updatedState.turnOrder[checkIndex]]
+        if (skippedPlayer != null && skippedPlayer.isAlive) {
+            skippedPlayerIds.add(updatedState.turnOrder[checkIndex])
+        }
+        checkIndex = (checkIndex + 1) % updatedState.turnOrder.size
+    }
+    skippedPlayerIds.forEach { skippedId ->
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyPlayerSkippedMessage(skippedId.toString()))
+    }
+
+    games[gameState.gameId] = nextState
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyExchangeAppleMessage(playerId.toString(), targetPlayerId.toString()))
     GameInitializer.sendBlackAppleUpdate(nextState, roomId, wsManager)
     GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
-    wsManager.broadcastToRoom(
-        roomId,
-        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
-    )
+
+    val finalState = checkAndHandlePhaseTransition(nextState, roomId, wsManager, games, gamesByRoom, rooms)
+    games[gameState.gameId] = finalState
 }
 
 suspend fun handleActionCheckOwnApple(
@@ -598,7 +700,8 @@ suspend fun handleActionCheckOwnApple(
     roomId: UUID,
     wsManager: WebSocketManager,
     games: MutableMap<UUID, GameState>,
-    gamesByRoom: MutableMap<UUID, UUID>
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
 ) {
     val (updatedState, error) = GameActionHandler.checkOwnApple(gameState, playerId)
     if (error != null) {
@@ -611,13 +714,28 @@ suspend fun handleActionCheckOwnApple(
         wsManager.sendToPlayer(playerId, WsHelpers.yourAppleStatusMessage(myApple.appleId.toString(), myApple.isPoisoned))
     }
 
-    val nextState = GameEngine.getNextTurnState(updatedState)
+    val beforeIndex = updatedState.currentTurnIndex
+    val nextState = GameActionHandler.advanceTurn(updatedState)
+
+    // スキップ通知
+    val skippedPlayerIds = mutableListOf<UUID>()
+    var checkIndex = (beforeIndex + 1) % updatedState.turnOrder.size
+    while (checkIndex != nextState.currentTurnIndex) {
+        val skippedPlayer = updatedState.players[updatedState.turnOrder[checkIndex]]
+        if (skippedPlayer != null && skippedPlayer.isAlive) {
+            skippedPlayerIds.add(updatedState.turnOrder[checkIndex])
+        }
+        checkIndex = (checkIndex + 1) % updatedState.turnOrder.size
+    }
+    skippedPlayerIds.forEach { skippedId ->
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyPlayerSkippedMessage(skippedId.toString()))
+    }
+
     games[gameState.gameId] = nextState
     GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
-    wsManager.broadcastToRoom(
-        roomId,
-        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
-    )
+
+    val finalState = checkAndHandlePhaseTransition(nextState, roomId, wsManager, games, gamesByRoom, rooms)
+    games[gameState.gameId] = finalState
 }
 
 suspend fun handleActionUseAbility(
@@ -627,7 +745,8 @@ suspend fun handleActionUseAbility(
     roomId: UUID,
     wsManager: WebSocketManager,
     games: MutableMap<UUID, GameState>,
-    gamesByRoom: MutableMap<UUID, UUID>
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
 ) {
     if (gameState.turnOrder[gameState.currentTurnIndex] != playerId) {
         wsManager.sendToPlayer(playerId, WsHelpers.errorMessage(ErrorCodes.NOT_YOUR_TURN, "自分の手番ではありません"))
@@ -653,30 +772,67 @@ suspend fun handleActionUseAbility(
         }
     }
 
-    val nextState = GameEngine.getNextTurnState(updatedState)
+    val beforeIndex = updatedState.currentTurnIndex
+    val nextState = GameActionHandler.advanceTurn(updatedState)
+
+    // スキップ通知
+    val skippedPlayerIds = mutableListOf<UUID>()
+    var checkIndex = (beforeIndex + 1) % updatedState.turnOrder.size
+    while (checkIndex != nextState.currentTurnIndex) {
+        val skippedPlayer = updatedState.players[updatedState.turnOrder[checkIndex]]
+        if (skippedPlayer != null && skippedPlayer.isAlive) {
+            skippedPlayerIds.add(updatedState.turnOrder[checkIndex])
+        }
+        checkIndex = (checkIndex + 1) % updatedState.turnOrder.size
+    }
+    skippedPlayerIds.forEach { skippedId ->
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyPlayerSkippedMessage(skippedId.toString()))
+    }
+
     games[gameState.gameId] = nextState
     GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
-    wsManager.broadcastToRoom(
-        roomId,
-        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
-    )
+
+    val finalState = checkAndHandlePhaseTransition(nextState, roomId, wsManager, games, gamesByRoom, rooms)
+    games[gameState.gameId] = finalState
 }
 
 suspend fun handleResponsePreference(
     gameState: GameState,
     responderId: UUID,
     answer: Boolean,
+    questionType: String,
     roomId: UUID,
     wsManager: WebSocketManager,
-    games: MutableMap<UUID, GameState>
+    games: MutableMap<UUID, GameState>,
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
 ) {
-    val (updatedState, error) = GameActionHandler.recordPreferenceAnswer(gameState, responderId, "APPLE", answer)
+    val (updatedState, error) = GameActionHandler.recordPreferenceAnswer(gameState, responderId, questionType, answer)
     if (error != null) return
 
-    games[gameState.gameId] = updatedState
+    val beforeIndex = updatedState.currentTurnIndex
+    val nextState = GameActionHandler.advanceTurn(updatedState)
 
-    wsManager.broadcastToRoom(roomId, WsHelpers.notifyPreferenceAnsweredMessage(responderId.toString(), "APPLE", answer))
-    GameInitializer.sendGameStateSync(roomId, updatedState, wsManager)
+    // スキップ通知
+    val skippedPlayerIds = mutableListOf<UUID>()
+    var checkIndex = (beforeIndex + 1) % updatedState.turnOrder.size
+    while (checkIndex != nextState.currentTurnIndex) {
+        val skippedPlayer = updatedState.players[updatedState.turnOrder[checkIndex]]
+        if (skippedPlayer != null && skippedPlayer.isAlive) {
+            skippedPlayerIds.add(updatedState.turnOrder[checkIndex])
+        }
+        checkIndex = (checkIndex + 1) % updatedState.turnOrder.size
+    }
+    skippedPlayerIds.forEach { skippedId ->
+        wsManager.broadcastToRoom(roomId, WsHelpers.notifyPlayerSkippedMessage(skippedId.toString()))
+    }
+
+    games[gameState.gameId] = nextState
+    wsManager.broadcastToRoom(roomId, WsHelpers.notifyPreferenceAnsweredMessage(responderId.toString(), questionType, answer))
+    GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
+
+    val finalState = checkAndHandlePhaseTransition(nextState, roomId, wsManager, games, gamesByRoom, rooms)
+    games[gameState.gameId] = finalState
 }
 
 suspend fun handleResponseQueenExchange(
@@ -686,7 +842,8 @@ suspend fun handleResponseQueenExchange(
     roomId: UUID,
     wsManager: WebSocketManager,
     games: MutableMap<UUID, GameState>,
-    gamesByRoom: MutableMap<UUID, UUID>
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
 ) {
     val (updatedState, error) = GameActionHandler.queenSelectExchange(gameState, queenPlayerId, targetPlayerId)
     if (error == "GUARD_ACTIVATED") {
@@ -701,10 +858,13 @@ suspend fun handleResponseQueenExchange(
     }
 
     games[gameState.gameId] = updatedState
-
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyExchangeAppleMessage(queenPlayerId.toString(), targetPlayerId.toString()))
     GameInitializer.sendBlackAppleUpdate(updatedState, roomId, wsManager)
     GameInitializer.sendGameStateSync(roomId, updatedState, wsManager)
+
+    // 交換完了後にENDING_REVEALへ遷移
+    wsManager.broadcastToRoom(roomId, WsHelpers.phaseChangedMessage("ENDING_REVEAL", null))
+    handleEndingReveal(updatedState, roomId, wsManager, games, gamesByRoom, rooms)
 }
 
 suspend fun handleRematchRequest(
@@ -754,8 +914,8 @@ suspend fun handleRematchRequest(
     }
 
     // seat_orderを詰め直す
-    remainingPlayers.forEachIndexed { index, player ->
-        player.copy(seatOrder = index)
+    remainingPlayers.sortedBy { it.seatOrder }.forEachIndexed { index, player ->
+        players[player.id] = player.copy(seatOrder = index)
     }
 
     // ルームをWAITING状態に戻す
@@ -764,3 +924,121 @@ suspend fun handleRematchRequest(
     // 全員に再ゲーム開始を通知
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyRematchStartingMessage())
 }
+
+// ============================================================================
+// フェイズ遷移・エンディング処理
+// ============================================================================
+
+suspend fun checkAndHandlePhaseTransition(
+    gameState: GameState,
+    roomId: UUID,
+    wsManager: WebSocketManager,
+    games: MutableMap<UUID, GameState>,
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
+): GameState {
+    var currentState = gameState
+
+    // 最後の手番フェイズ：手番開始時の呪いの指輪チェック
+    if (currentState.phase == GamePhase.LAST_TURN) {
+        val currentPlayerId = currentState.turnOrder[currentState.currentTurnIndex]
+        val (stateAfterCursed, cursedEvents) = GamePhaseHandler.handleLastTurnStart(currentState, currentPlayerId)
+
+        if (cursedEvents.isNotEmpty()) {
+            // 呪いの指輪で死亡
+            currentState = stateAfterCursed
+            games[currentState.gameId] = currentState
+            wsManager.broadcastToRoom(roomId, WsHelpers.notifyPlayerDiedMessage(currentPlayerId.toString(), "CURSED_RING"))
+            GameInitializer.sendGameStateSync(roomId, currentState, wsManager)
+
+            // 死亡後に次のターンへ
+            val nextState = GameActionHandler.advanceTurn(currentState)
+            currentState = nextState
+            games[currentState.gameId] = currentState
+
+            // 再帰的にフェイズチェック
+            return checkAndHandlePhaseTransition(currentState, roomId, wsManager, games, gamesByRoom, rooms)
+        }
+
+        // 最後の手番終了チェック
+        if (GamePhaseHandler.checkLastTurnEnd(currentState)) {
+            // エンディングフェイズへ移行
+            currentState = GamePhaseHandler.transitionToEnding(currentState)
+            games[currentState.gameId] = currentState
+            wsManager.broadcastToRoom(roomId, WsHelpers.phaseChangedMessage("ENDING_QUEEN", null))
+
+            // 女王の特権処理
+            val (stateAfterQueen, queenEvents) = GamePhaseHandler.processQueenPrivilege(currentState)
+            currentState = stateAfterQueen
+            games[currentState.gameId] = currentState
+
+            // 女王リンゴ公開通知
+            queenEvents.forEach { event ->
+                val parts = event.split(":")
+                if (parts[0] == "APPLE_REVEALED") {
+                    wsManager.broadcastToRoom(roomId, WsHelpers.notifyApplePubliclyRevealedMessage(
+                        appleId = parts[1],
+                        holderPlayerId = parts[2],
+                        isPoisoned = parts[3].toBoolean()
+                    ))
+                }
+            }
+
+            if (currentState.phase == GamePhase.ENDING_REVEAL) {
+                // 女王が死亡 or 通常リンゴ → 即座にENDING_REVEALへ
+                wsManager.broadcastToRoom(roomId, WsHelpers.phaseChangedMessage("ENDING_REVEAL", null))
+                handleEndingReveal(currentState, roomId, wsManager, games, gamesByRoom, rooms)
+            } else {
+                // 毒リンゴ → 女王に交換対象を要求
+                val alivePlayerIds = currentState.players.values
+                    .filter { it.isAlive && it.role != Role.QUEEN }
+                    .map { it.playerId.toString() }
+                wsManager.sendToPlayer(
+                    currentState.players.values.find { it.role == Role.QUEEN }!!.playerId,
+                    WsHelpers.requestQueenExchangeMessage(alivePlayerIds)
+                )
+            }
+        } else {
+            // 通常のターン変更通知
+            wsManager.broadcastToRoom(roomId, WsHelpers.turnChangedMessage(
+                currentState.turnOrder[currentState.currentTurnIndex].toString(), 180
+            ))
+        }
+    } else {
+        // ストーリーフェイズ：通常のターン変更通知
+        wsManager.broadcastToRoom(roomId, WsHelpers.turnChangedMessage(
+            currentState.turnOrder[currentState.currentTurnIndex].toString(), 180
+        ))
+    }
+
+    return currentState
+}
+
+suspend fun handleEndingReveal(
+    gameState: GameState,
+    roomId: UUID,
+    wsManager: WebSocketManager,
+    games: MutableMap<UUID, GameState>,
+    gamesByRoom: MutableMap<UUID, UUID>,
+    rooms: MutableMap<UUID, Room>
+) {
+    val (finalState, events, winFaction) = GamePhaseHandler.processEnding(gameState)
+    games[finalState.gameId] = finalState
+
+    // リンゴ公開・死亡通知
+    events.forEach { event ->
+        val parts = event.split(":")
+        when (parts[0]) {
+            "APPLE_REVEALED" -> wsManager.broadcastToRoom(roomId, WsHelpers.notifyApplePubliclyRevealedMessage(
+                appleId = parts[1], holderPlayerId = parts[2], isPoisoned = parts[3].toBoolean()
+            ))
+            "PLAYER_DIED" -> wsManager.broadcastToRoom(roomId, WsHelpers.notifyPlayerDiedMessage(
+                playerId = parts[1], cause = parts[2]
+            ))
+        }
+    }
+
+    GameInitializer.sendGameStateSync(roomId, finalState, wsManager)
+    GameResultHandler.finishGame(finalState, roomId, wsManager, games, gamesByRoom, rooms)
+}
+

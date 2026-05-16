@@ -424,6 +424,22 @@ object WsHelpers {
         )
     }
 
+    fun notifyKnightBlockedMessage(targetPlayerId: String): WsMessage {
+        return WsMessage(
+            type = ServerEvents.NOTIFY_KNIGHT_BLOCKED,
+            payload = mapOf("targetPlayerId" to targetPlayerId)
+        )
+    }
+
+    fun notifyPlayerSkippedMessage(playerId: String): WsMessage {
+        return WsMessage(
+            type = ServerEvents.NOTIFY_PLAYER_SKIPPED,
+            payload = mapOf(
+                "playerId" to playerId
+            )
+        )
+    }
+
     fun errorMessage(code: String, message: String): WsMessage {
         return WsMessage(
             type = ServerEvents.ERROR,

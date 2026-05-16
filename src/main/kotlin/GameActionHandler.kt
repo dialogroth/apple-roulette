@@ -570,40 +570,54 @@ class GameActionHandler {
         // ================================================================================
         // 手番を進める
         // ================================================================================
-        fun advanceTurn(gameState: GameState): GameState {
+        fun advanceTurn(
+            gameState: GameState
+        ): GameState {
             var updatedState = gameState
 
-            // スキップ対象か確認
             var nextIndex = (updatedState.currentTurnIndex + 1) % updatedState.turnOrder.size
-            var nextPlayerId = updatedState.turnOrder[nextIndex]
-            var nextPlayer = updatedState.players[nextPlayerId]!!
+            var loopCount = 0
 
-            // スキップ予定のプレイヤーをスキップ
-            while (nextPlayer.skipNextTurn && nextPlayer.isAlive) {
-                // スキップフラグをクリア
-                updatedState = updatedState.copy(
-                    players = updatedState.players.toMutableMap().apply {
-                        put(nextPlayerId, nextPlayer.copy(skipNextTurn = false))
-                    }
-                )
+            while (loopCount < updatedState.turnOrder.size) {
+                val nextPlayerId = updatedState.turnOrder[nextIndex]
+                val nextPlayer = updatedState.players[nextPlayerId]!!
 
-                nextIndex = (nextIndex + 1) % updatedState.turnOrder.size
-                nextPlayerId = updatedState.turnOrder[nextIndex]
-                nextPlayer = updatedState.players[nextPlayerId]!!
+                // 死亡プレイヤーはスキップ（通知不要）
+                if (!nextPlayer.isAlive) {
+                    nextIndex = (nextIndex + 1) % updatedState.turnOrder.size
+                    loopCount++
+                    continue
+                }
+
+                // ロープスキップ
+                if (nextPlayer.skipNextTurn) {
+                    // スキップフラグをクリア（isProtectedはここで触らない）
+                    updatedState = updatedState.copy(
+                        players = updatedState.players.toMutableMap().apply {
+                            put(nextPlayerId, nextPlayer.copy(skipNextTurn = false))
+                        }
+                    )
+
+
+                    nextIndex = (nextIndex + 1) % updatedState.turnOrder.size
+                    loopCount++
+                    continue
+                }
+
+                // 有効な次の手番プレイヤーが見つかった
+                // グレイの保護リセット：グレイ本人の手番が来たときのみ解除
+                if (nextPlayer.isProtected && nextPlayer.role == Role.GRAY) {
+                    updatedState = updatedState.copy(
+                        players = updatedState.players.toMutableMap().apply {
+                            put(nextPlayerId, nextPlayer.copy(isProtected = false))
+                        }
+                    )
+                }
+
+                break
             }
 
-            // グレイの保護をクリア（スキップされていない手番の場合）
-            if (nextPlayer.isProtected) {
-                updatedState = updatedState.copy(
-                    players = updatedState.players.toMutableMap().apply {
-                        put(nextPlayerId, nextPlayer.copy(isProtected = false))
-                    }
-                )
-            }
-
-            updatedState = updatedState.copy(currentTurnIndex = nextIndex)
-
-            return updatedState
+            return updatedState.copy(currentTurnIndex = nextIndex)
         }
     }
 }
