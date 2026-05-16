@@ -55,11 +55,11 @@ class WebSocketManager {
 
     private fun buildJsonString(message: WsMessage): String {
         val json = StringBuilder()
-        json.append("{\"type\":\"${message.type}\",\"payload\":{")
+        json.append("{\"type\":\"${escapeJsonString(message.type)}\",\"payload\":{")
 
         val payloadEntries = message.payload.entries.toList()
         payloadEntries.forEachIndexed { index, (key, value) ->
-            json.append("\"$key\":")
+            json.append("\"${escapeJsonString(key)}\":")
             json.append(valueToJson(value))
             if (index < payloadEntries.size - 1) json.append(",")
         }
@@ -70,17 +70,44 @@ class WebSocketManager {
 
     private fun valueToJson(value: Any?): String = when (value) {
         null -> "null"
-        is String -> "\"${value.replace("\"", "\\\"")}\""
+        is String -> "\"${escapeJsonString(value)}\""
         is Number -> value.toString()
         is Boolean -> value.toString()
         is List<*> -> "[" + value.joinToString(",") { valueToJson(it) } + "]"
         is Map<*, *> -> {
             "{" + value.entries.joinToString(",") { (k, v) ->
-                "\"$k\":${valueToJson(v)}"
+                "\"${escapeJsonString(k.toString())}\":${valueToJson(v)}"
             } + "}"
         }
-        else -> "\"${value.toString().replace("\"", "\\\"")}\""
+        is PlayerSummary -> valueToJson(mapOf(
+            "playerId" to value.playerId,
+            "userName" to value.userName,
+            "seatOrder" to value.seatOrder,
+            "isAlive" to value.isAlive,
+            "isConnected" to value.isConnected,
+            "isRoleRevealed" to value.isRoleRevealed,
+            "role" to value.role,
+            "isProtected" to value.isProtected,
+            "skipNextTurn" to value.skipNextTurn,
+            "applePreferenceAnswer" to value.applePreferenceAnswer,
+            "mushroomPreferenceAnswer" to value.mushroomPreferenceAnswer
+        ))
+        is AppleSummary -> valueToJson(mapOf(
+            "appleId" to value.appleId,
+            "currentHolderPlayerId" to value.currentHolderPlayerId,
+            "isPoisoned" to value.isPoisoned,
+            "isPubliclyRevealed" to value.isPubliclyRevealed
+        ))
+        else -> "\"${escapeJsonString(value.toString())}\""
     }
+
+    private fun escapeJsonString(value: String): String =
+        value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
 }
 
 // ============================================================================

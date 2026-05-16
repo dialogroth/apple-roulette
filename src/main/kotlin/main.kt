@@ -14,6 +14,11 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.plugins.contentnegotiation.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -223,11 +228,11 @@ fun Application.module() {
                     if (frame is Frame.Text) {
                         try {
                             val messageText = frame.readText()
-                            // JSONメッセージを解析
-                            val jsonMap = json.decodeFromString<Map<String, Any?>>(messageText)
-                            val type = jsonMap["type"] as? String ?: continue
-                            @Suppress("UNCHECKED_CAST")
-                            val payload = (jsonMap["payload"] as? Map<String, Any?>) ?: emptyMap()
+                            val jsonObject = json.parseToJsonElement(messageText) as? JsonObject ?: continue
+                            val type = jsonObject["type"]?.jsonPrimitiveContentOrNull() ?: continue
+                            val payload = (jsonObject["payload"] as? JsonObject)
+                                ?.let { jsonObjectToMap(it) }
+                                ?: emptyMap()
 
                             val message = WsMessage(type, payload)
                             handleGameEvent(
@@ -279,6 +284,28 @@ fun Application.module() {
         }
     }
 }
+
+private fun jsonObjectToMap(jsonObject: JsonObject): Map<String, Any?> =
+    jsonObject.mapValues { (_, value) -> jsonElementToAny(value) }
+
+private fun jsonElementToAny(value: JsonElement): Any? = when (value) {
+    JsonNull -> null
+    is JsonObject -> jsonObjectToMap(value)
+    is JsonArray -> value.map { jsonElementToAny(it) }
+    is JsonPrimitive -> when {
+        value.isString -> value.content
+        value.content == "true" -> true
+        value.content == "false" -> false
+        value.content.toIntOrNull() != null -> value.content.toInt()
+        value.content.toLongOrNull() != null -> value.content.toLong()
+        value.content.toDoubleOrNull() != null -> value.content.toDouble()
+        else -> value.content
+    }
+    else -> null
+}
+
+private fun JsonElement.jsonPrimitiveContentOrNull(): String? =
+    (this as? JsonPrimitive)?.takeIf { it.isString }?.content
 
 // ============================================================================
 // WebSocketイベントハンドラー
