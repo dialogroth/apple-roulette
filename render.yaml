@@ -2,7 +2,6 @@ services:
   - type: web
     name: apple-roulette
     runtime: docker
-    repo: https://github.com/YOUR_USERNAME/apple-roulette.git
     branch: main
     plan: free
     envVars:

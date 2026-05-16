@@ -30,4 +30,4 @@ EXPOSE 8080
 # JVM オプション設定（メモリ最適化）
 ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
-CMD ["java", "-jar", "app.jar"]
+CMD ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
