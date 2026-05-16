@@ -7,6 +7,9 @@ COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 COPY gradle ./gradle
 COPY gradlew* ./
 
+# ← これ追加！！！
+RUN chmod +x gradlew
+
 # ソースコードコピー
 COPY src ./src
 COPY files ./files
