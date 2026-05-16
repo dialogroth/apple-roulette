@@ -28,6 +28,9 @@ dependencies {
     implementation(ktorLibs.server.websockets)
     implementation(libs.logback.classic)
 
+    // JSON serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)
 }

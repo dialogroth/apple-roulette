@@ -2,38 +2,723 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>オンラインチャット</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>白雪姫のアップルルーレット</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .message {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #666;
+        }
+
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #c62828;
+        }
+
+        .message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #2e7d32;
+        }
+
+        .player-list {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .player-item {
+            padding: 10px;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 3px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <!-- スタート画面 -->
+        <div id="startScreen" class="screen active">
+            <h1>🍎 白雪姫のアップルルーレット 🍎</h1>
 
-<h1>オンラインチャット</h1>
+            <div class="form-group">
+                <label for="userName">ユーザー名</label>
+                <input type="text" id="userName" placeholder="プレイヤー名を入力" maxlength="12">
+                <div id="userNameError" class="message error" style="display:none;"></div>
+            </div>
 
-<input type="text" id="message">
-<button onclick="sendMessage()">送信</button>
+            <button onclick="validateAndShowRoomChoice()">次へ進む</button>
 
-<div id="chat"></div>
+            <div style="margin-top: 30px; text-align: center; color: #999; font-size: 12px;">
+                <p>4～9名で遊ぶボードゲーム</p>
+            </div>
+        </div>
 
-<script>
+        <!-- ルーム選択画面 -->
+        <div id="roomChoiceScreen" class="screen">
+            <h1>ルーム選択</h1>
 
-    const socket = new WebSocket("ws://" + location.host + "/ws");
+            <button onclick="showCreateRoomScreen()">部屋を作る</button>
+            <button onclick="showJoinRoomScreen()" style="background: #764ba2;">部屋に入る</button>
+            <button onclick="showStartScreen()" style="background: #999; margin-top: 20px;">戻る</button>
+        </div>
 
-    socket.onmessage = (event) => {
+        <!-- ルーム作成画面 -->
+        <div id="createRoomScreen" class="screen">
+            <h1>ルーム作成</h1>
 
-        const div = document.getElementById("chat");
+            <div class="form-group">
+                <label for="playerCount">参加人数</label>
+                <select id="playerCount" onchange="updateRolePreset()">
+                    <option value="4">4名</option>
+                    <option value="5">5名</option>
+                    <option value="6">6名</option>
+                    <option value="7">7名</option>
+                    <option value="8">8名</option>
+                    <option value="9">9名</option>
+                </select>
+            </div>
 
-        div.innerHTML += "<p>" + event.data + "</p>";
-    };
+            <div class="form-group">
+                <label for="poisonAppleCount">毒リンゴの枚数</label>
+                <select id="poisonAppleCount">
+                    <option value="1">1枚</option>
+                    <option value="2" selected>2枚</option>
+                    <option value="3">3枚</option>
+                </select>
+            </div>
 
-    function sendMessage() {
+            <div class="form-group">
+                <label>使用する役職（推奨セット）</label>
+                <div id="roleCheckboxes"></div>
+            </div>
 
-        const input = document.getElementById("message");
+            <div id="createError" class="message error" style="display:none;"></div>
 
-        socket.send(input.value);
+            <button onclick="createRoom()">ルームを作成</button>
+            <button onclick="showRoomChoiceScreen()" style="background: #999;">戻る</button>
+        </div>
 
-        input.value = "";
-    }
+        <!-- ルーム参加画面 -->
+        <div id="joinRoomScreen" class="screen">
+            <h1>ルームコード入力</h1>
 
-</script>
+            <div class="form-group">
+                <label for="roomCode">ルームコード（6文字）</label>
+                <input type="text" id="roomCode" placeholder="ABCDEF" maxlength="6" style="text-transform: uppercase; letter-spacing: 2px;">
+            </div>
 
+            <div id="joinError" class="message error" style="display:none;"></div>
+
+            <button onclick="joinRoom()">参加する</button>
+            <button onclick="showRoomChoiceScreen()" style="background: #999;">戻る</button>
+        </div>
+
+        <!-- ルーム待機画面 -->
+        <div id="waitingScreen" class="screen">
+            <h1>ルーム待機中</h1>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p style="color: #999; font-size: 12px;">ルームコード</p>
+                <code id="displayRoomCode">XXXXXX</code>
+            </div>
+
+            <div class="form-group">
+                <label>参加者一覧</label>
+                <div id="playerList" class="player-list"></div>
+            </div>
+
+            <button onclick="startGame()" id="startGameBtn" style="display:none;">ゲーム開始</button>
+            <div id="waitingMessage" class="message" style="display:none;">ホストがゲーム開始を待っています...</div>
+
+            <button onclick="leaveRoom()" style="background: #999; margin-top: 10px;">ルームから出る</button>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="gameScreen" class="screen">
+            <h1>🎮 ゲーム中</h1>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <!-- ゲーム情報パネル -->
+                <div>
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
+                        <p style="margin: 0; color: #999; font-size: 12px;">フェイズ</p>
+                        <p id="currentPhase" style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold;">ストーリーフェイズ</p>
+                    </div>
+
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
+                        <p style="margin: 0; color: #999; font-size: 12px;">手番プレイヤー</p>
+                        <p id="currentPlayer" style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold;">-</p>
+                    </div>
+                </div>
+
+                <!-- 山札・捨て山パネル -->
+                <div>
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
+                        <p style="margin: 0; color: #999; font-size: 12px;">山札残枚数</p>
+                        <p id="deckCount" style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: #667eea;">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- プレイヤーボード -->
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; color: #333; font-weight: bold;">プレイヤー一覧</p>
+                <div id="playerBoard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;"></div>
+            </div>
+
+            <!-- アクションパネル -->
+            <div style="background: #fff3e0; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; color: #333; font-weight: bold;">アクション</p>
+                <div id="actionPanel" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;"></div>
+            </div>
+
+            <div style="text-align: center; color: #999; font-size: 12px;">
+                <p>リアルタイムログ: <span id="gameLog">ゲーム開始待機中...</span></p>
+            </div>
+        </div>
+
+        <!-- 勝敗画面 -->
+        <div id="resultScreen" class="screen">
+            <h1 id="resultTitle">ゲーム終了</h1>
+
+            <div style="background: #f0f0f0; padding: 20px; border-radius: 5px; text-align: center; margin-bottom: 20px;">
+                <p style="margin: 0; color: #999; font-size: 12px;">勝利陣営</p>
+                <p id="winFaction" style="margin: 10px 0 0 0; font-size: 24px; font-weight: bold;">-</p>
+            </div>
+
+            <div class="form-group">
+                <label>ゲーム結果</label>
+                <div id="resultPlayers" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                <button onclick="rematchGame()" id="rematchBtn" style="display: none;">もう一度遊ぶ</button>
+                <button onclick="returnToStart()" style="background: #999;">ルームを解散</button>
+            </div>
+        </div>
+
+    <script>
+        // グローバル状態
+        let appState = {
+            userName: '',
+            roomId: null,
+            playerId: null,
+            roomCode: null,
+            isHost: false,
+            socket: null,
+            gameStarted: false
+        };
+
+        const roleNames = {
+            'SNOW_WHITE': '白雪姫',
+            'QUEEN': '女王',
+            'GREEN': 'グリーン',
+            'BLACK': 'ブラック',
+            'BROWN': 'ブラウン',
+            'GRAY': 'グレイ',
+            'NAVY': 'ネイビー',
+            'ROSE': 'ロゼ',
+            'LIGHT': 'ライト'
+        };
+
+        const recommendedRoles = {
+            4: ['SNOW_WHITE', 'QUEEN', 'GREEN', 'BLACK'],
+            5: ['SNOW_WHITE', 'QUEEN', 'GREEN', 'BLACK', 'LIGHT'],
+            6: ['SNOW_WHITE', 'QUEEN', 'GREEN', 'BLACK', 'BROWN', 'LIGHT'],
+            7: ['SNOW_WHITE', 'QUEEN', 'GREEN', 'BLACK', 'BROWN', 'LIGHT', 'ROSE'],
+            8: ['SNOW_WHITE', 'QUEEN', 'GREEN', 'BLACK', 'BROWN', 'NAVY', 'LIGHT', 'ROSE'],
+            9: ['SNOW_WHITE', 'QUEEN', 'GREEN', 'BLACK', 'BROWN', 'GRAY', 'NAVY', 'LIGHT', 'ROSE']
+        };
+
+        // ========== 画面遷移 ==========
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function showStartScreen() {
+            showScreen('startScreen');
+        }
+
+        function showRoomChoiceScreen() {
+            showScreen('roomChoiceScreen');
+        }
+
+        function showCreateRoomScreen() {
+            updateRolePreset();
+            showScreen('createRoomScreen');
+        }
+
+        function showJoinRoomScreen() {
+            showScreen('joinRoomScreen');
+        }
+
+        // ========== スタート画面 ==========
+
+        function validateAndShowRoomChoice() {
+            const userName = document.getElementById('userName').value.trim();
+            const errorDiv = document.getElementById('userNameError');
+
+            if (!userName || userName.length < 1) {
+                errorDiv.textContent = 'ユーザー名を入力してください';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (userName.length > 12) {
+                errorDiv.textContent = 'ユーザー名は12文字以内です';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            appState.userName = userName;
+            errorDiv.style.display = 'none';
+            showRoomChoiceScreen();
+        }
+
+        // ========== ルーム作成 ==========
+
+        function updateRolePreset() {
+            const playerCount = parseInt(document.getElementById('playerCount').value);
+            const roles = recommendedRoles[playerCount];
+            const container = document.getElementById('roleCheckboxes');
+
+            container.innerHTML = roles.map(role => `
+                <label style="display: block; margin: 8px 0; cursor: pointer;">
+                    <input type="checkbox" name="role" value="${role}" checked>
+                    ${roleNames[role]}
+                </label>
+            `).join('');
+        }
+
+        async function createRoom() {
+            const playerCount = parseInt(document.getElementById('playerCount').value);
+            const poisonAppleCount = parseInt(document.getElementById('poisonAppleCount').value);
+
+            const selectedRoles = Array.from(document.querySelectorAll('input[name="role"]:checked'))
+                .map(cb => cb.value);
+
+            if (selectedRoles.length !== playerCount) {
+                document.getElementById('createError').textContent =
+                    `${playerCount}名の役職を選択してください（現在${selectedRoles.length}名）`;
+                document.getElementById('createError').style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/rooms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        hostUserName: appState.userName,
+                        playerCount: playerCount,
+                        roles: selectedRoles,
+                        poisonAppleCount: poisonAppleCount,
+                        cardSettings: {}
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('ルーム作成に失敗しました');
+                }
+
+                const data = await response.json();
+                appState.roomId = data.roomId;
+                appState.roomCode = data.roomCode;
+                appState.playerId = data.hostPlayerId;
+                appState.isHost = true;
+
+                connectToRoom();
+
+            } catch (error) {
+                document.getElementById('createError').textContent = error.message;
+                document.getElementById('createError').style.display = 'block';
+            }
+        }
+
+        // ========== ルーム参加 ==========
+
+        async function joinRoom() {
+            const roomCode = document.getElementById('roomCode').value.toUpperCase();
+
+            if (!roomCode || roomCode.length !== 6) {
+                document.getElementById('joinError').textContent = 'ルームコードは6文字です';
+                document.getElementById('joinError').style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/rooms/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        roomCode: roomCode,
+                        userName: appState.userName
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'ルーム参加に失敗しました');
+                }
+
+                const data = await response.json();
+                appState.roomId = data.roomId;
+                appState.playerId = data.playerId;
+                appState.roomCode = roomCode;
+                appState.isHost = false;
+
+                connectToRoom();
+
+            } catch (error) {
+                document.getElementById('joinError').textContent = error.message;
+                document.getElementById('joinError').style.display = 'block';
+            }
+        }
+
+        // ========== ルーム接続 ==========
+
+        function connectToRoom() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/game?roomId=${appState.roomId}&playerId=${appState.playerId}`;
+
+            appState.socket = new WebSocket(wsUrl);
+
+            appState.socket.onopen = () => {
+                console.log('WebSocket接続成功');
+                showWaitingScreen();
+            };
+
+            appState.socket.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    handleSocketMessage(message);
+                } catch (error) {
+                    console.error('メッセージ処理エラー:', error);
+                }
+            };
+
+            appState.socket.onerror = (error) => {
+                console.error('WebSocketエラー:', error);
+            };
+
+            appState.socket.onclose = () => {
+                console.log('WebSocket接続切断');
+            };
+        }
+
+        function handleSocketMessage(message) {
+            console.log('受信:', message.type);
+
+            switch (message.type) {
+                case 'PLAYER_JOINED':
+                    updatePlayerList();
+                    break;
+                case 'PLAYER_DISCONNECTED':
+                    updatePlayerList();
+                    break;
+                case 'GAME_STARTED':
+                    appState.gameStarted = true;
+                    updateGameScreen(message.payload);
+                    showScreen('gameScreen');
+                    break;
+                case 'GAME_STATE_SYNC':
+                    updateGameState(message.payload);
+                    break;
+                case 'NOTIFY_DRAW_CARD':
+                    updateGameLog(`${message.payload.playerId} が山札を引きました`);
+                    break;
+                case 'NOTIFY_USE_CARD':
+                    updateGameLog(`${message.payload.cardType} が使用されました`);
+                    break;
+                case 'NOTIFY_PLAYER_DIED':
+                    const causes = {
+                        'POISON_APPLE': '毒リンゴ',
+                        'POISON_COMB': '毒の櫛',
+                        'CURSED_RING': '呪いの指輪',
+                        'DISCONNECTED': '接続切断'
+                    };
+                    updateGameLog(`プレイヤーが死亡しました (${causes[message.payload.cause] || message.payload.cause})`);
+                    break;
+                case 'TURN_CHANGED':
+                    updateGameLog(`${message.payload.currentTurnPlayerId} の手番です`);
+                    break;
+                case 'PHASE_CHANGED':
+                    updateGameLog(`フェイズが ${message.payload.newPhase} に変わりました`);
+                    break;
+                case 'GAME_RESULT':
+                    showResultScreen(message.payload);
+                    break;
+                case 'NOTIFY_REMATCH_STARTING':
+                    appState.gameStarted = false;
+                    showWaitingScreen();
+                    break;
+                default:
+                    console.log('未処理のイベント:', message.type);
+            }
+        }
+
+        function updateGameScreen(payload) {
+            document.getElementById('currentPlayer').textContent =
+                appState.userName === 'ホスト' ? 'ゲーム開始' : 'ゲーム進行中';
+            updatePlayerBoard(payload.players || []);
+        }
+
+        function updateGameState(payload) {
+            document.getElementById('currentPhase').textContent =
+                payload.phase === 'STORY' ? 'ストーリーフェイズ' :
+                payload.phase === 'LAST_TURN' ? '最後の手番フェイズ' :
+                payload.phase === 'ENDING_QUEEN' ? 'エンディング（女王特権）' :
+                payload.phase === 'ENDING_REVEAL' ? 'エンディング（リンゴ公開）' :
+                payload.phase;
+
+            document.getElementById('deckCount').textContent = payload.deckRemainingCount;
+            updatePlayerBoard(payload.players || []);
+        }
+
+        function updatePlayerBoard(players) {
+            const board = document.getElementById('playerBoard');
+            board.innerHTML = players.map(p => `
+                <div style="background: white; padding: 12px; border-radius: 3px; border-left: 4px solid ${p.isAlive ? '#667eea' : '#999'}; opacity: ${p.isAlive ? 1 : 0.5};">
+                    <p style="margin: 0 0 5px 0; font-weight: bold; font-size: 14px;">${p.userName}</p>
+                    <p style="margin: 5px 0; font-size: 11px; color: #666;">
+                        ${p.isAlive ? '生存' : '💀 死亡'}
+                        ${p.isConnected ? '' : ' 🔌 切断'}
+                    </p>
+                    ${p.role && p.isRoleRevealed ? `<p style="margin: 5px 0 0 0; font-size: 10px; background: #f0f0f0; padding: 3px 6px; border-radius: 2px;">${p.role}</p>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function updateGameLog(message) {
+            document.getElementById('gameLog').textContent = message;
+        }
+
+        function showResultScreen(payload) {
+            showScreen('resultScreen');
+
+            const factionNames = {
+                'SNOW_WHITE_FACTION': '👑 白雪姫陣営',
+                'QUEEN_FACTION': '👿 女王陣営',
+                'THIRD_FACTION': '🌹 ロゼ陣営'
+            };
+
+            document.getElementById('resultTitle').textContent =
+                payload.reason === 'SNOW_WHITE_DISCONNECTED' ?
+                '⚠️ ゲーム強制終了（白雪姫切断）' :
+                '🎊 ゲーム終了';
+
+            document.getElementById('winFaction').textContent = factionNames[payload.winFaction] || '未定';
+
+            document.getElementById('resultPlayers').innerHTML = payload.players.map(p => `
+                <div style="background: ${p.isWinner ? '#e8f5e9' : '#ffebee'}; padding: 12px; margin-bottom: 10px; border-radius: 3px; border-left: 4px solid ${p.isWinner ? '#2e7d32' : '#c62828'};">
+                    <p style="margin: 0; font-weight: bold;">${p.userName} ${p.isWinner ? '✅ 勝利' : '❌ 敗北'}</p>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">役職: ${p.role} | 陣営: ${p.faction}</p>
+                    <p style="margin: 5px 0 0 0; font-size: 12px;">リンゴ: ${p.apple.isPoisoned ? '🍎 毒' : '🍏 通常'}</p>
+                </div>
+            `).join('');
+
+            if (appState.isHost) {
+                document.getElementById('rematchBtn').style.display = 'block';
+            }
+        }
+
+        function rematchGame() {
+            if (appState.socket && appState.socket.readyState === WebSocket.OPEN) {
+                appState.socket.send(JSON.stringify({
+                    type: 'REMATCH_REQUEST',
+                    payload: {}
+                }));
+            }
+        }
+
+        function returnToStart() {
+            if (appState.socket) {
+                appState.socket.close();
+            }
+            appState.roomId = null;
+            appState.playerId = null;
+            appState.roomCode = null;
+            appState.isHost = false;
+            appState.gameStarted = false;
+            showStartScreen();
+        }
+
+        function showWaitingScreen() {
+            document.getElementById('displayRoomCode').textContent = appState.roomCode;
+
+            if (appState.isHost) {
+                document.getElementById('startGameBtn').style.display = 'block';
+                document.getElementById('waitingMessage').style.display = 'none';
+            } else {
+                document.getElementById('startGameBtn').style.display = 'none';
+                document.getElementById('waitingMessage').style.display = 'block';
+            }
+
+            updatePlayerList();
+            showScreen('waitingScreen');
+        }
+
+        function updatePlayerList() {
+            // プレイヤー一覧を更新（TODO: サーバーからの情報に基づいて更新）
+            const playerList = document.getElementById('playerList');
+            playerList.innerHTML = `<div class="player-item">
+                <span id="userName">${appState.userName}</span>
+                <span class="badge">${appState.isHost ? 'ホスト' : 'ゲスト'}</span>
+            </div>`;
+        }
+
+        function startGame() {
+            if (appState.socket && appState.socket.readyState === WebSocket.OPEN) {
+                appState.socket.send(JSON.stringify({
+                    type: 'GAME_START',
+                    payload: {}
+                }));
+            }
+        }
+
+        function leaveRoom() {
+            if (appState.socket) {
+                appState.socket.close();
+            }
+            appState.roomId = null;
+            appState.playerId = null;
+            appState.roomCode = null;
+            appState.isHost = false;
+            showRoomChoiceScreen();
+        }
+    </script>
 </body>
 </html>
