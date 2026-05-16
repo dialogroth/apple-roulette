@@ -479,16 +479,21 @@ suspend fun handleActionUseCard(
         return
     }
 
-    games[gameState.gameId] = updatedState
+    val nextState = GameEngine.getNextTurnState(updatedState)
+    games[gameState.gameId] = nextState
 
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyUseCardMessage(playerId.toString(), card.cardType.toString(), params))
 
     // アップルルーレット使用時はブラックへの更新を送信
     if (card.cardType in listOf(CardType.ROULETTE_1, CardType.ROULETTE_2, CardType.ROULETTE_3)) {
-        GameInitializer.sendBlackAppleUpdate(updatedState, roomId, wsManager)
+        GameInitializer.sendBlackAppleUpdate(nextState, roomId, wsManager)
     }
 
-    GameInitializer.sendGameStateSync(roomId, updatedState, wsManager)
+    GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
+    wsManager.broadcastToRoom(
+        roomId,
+        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
+    )
 }
 
 suspend fun handleActionDiscardCard(
@@ -513,10 +518,15 @@ suspend fun handleActionDiscardCard(
         return
     }
 
-    games[gameState.gameId] = updatedState
+    val nextState = GameEngine.getNextTurnState(updatedState)
+    games[gameState.gameId] = nextState
 
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyDiscardCardMessage(playerId.toString(), card.cardType.toString()))
-    GameInitializer.sendGameStateSync(roomId, updatedState, wsManager)
+    GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
+    wsManager.broadcastToRoom(
+        roomId,
+        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
+    )
 }
 
 suspend fun handleActionExchangeHand(

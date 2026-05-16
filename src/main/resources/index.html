@@ -337,7 +337,13 @@
             roomCode: null,
             isHost: false,
             socket: null,
-            gameStarted: false
+            gameStarted: false,
+            players: [],
+            currentTurnPlayerId: null,
+            myHand: [],
+            myRole: null,
+            myFaction: null,
+            deckRemainingCount: 0
         };
 
         const roleNames = {
@@ -359,6 +365,22 @@
             7: ['SNOW_WHITE', 'QUEEN', 'GREEN', 'BLACK', 'BROWN', 'LIGHT', 'ROSE'],
             8: ['SNOW_WHITE', 'QUEEN', 'GREEN', 'BLACK', 'BROWN', 'NAVY', 'LIGHT', 'ROSE'],
             9: ['SNOW_WHITE', 'QUEEN', 'GREEN', 'BLACK', 'BROWN', 'GRAY', 'NAVY', 'LIGHT', 'ROSE']
+        };
+
+        const cardNames = {
+            APPLE_QUESTION: 'りんごは好き？',
+            MUSHROOM_QUESTION: 'きのこは好き？',
+            ITADAKIMASU: 'いただきます',
+            ROULETTE_1: 'アップルルーレット1',
+            ROULETTE_2: 'アップルルーレット2',
+            ROULETTE_3: 'アップルルーレット3',
+            KNIFE: 'ナイフ',
+            CURSED_RING: '呪いの指輪',
+            POISON_COMB: '毒の櫛',
+            KNIGHT: '騎士',
+            GUARD: 'ガード',
+            ROPE: 'ロープ',
+            PRESENT_EXCHANGE: 'プレゼント交換'
         };
 
         // ========== 画面遷移 ==========
@@ -551,17 +573,28 @@
                     break;
                 case 'GAME_STARTED':
                     appState.gameStarted = true;
+                    appState.players = message.payload.players || [];
+                    appState.currentTurnPlayerId = message.payload.firstTurnPlayerId || null;
                     updateGameScreen(message.payload);
                     showScreen('gameScreen');
+                    break;
+                case 'YOUR_INITIAL_INFO':
+                    appState.myRole = message.payload.role;
+                    appState.myFaction = message.payload.faction;
+                    appState.myHand = message.payload.myHand || [];
+                    updateActionPanel();
                     break;
                 case 'GAME_STATE_SYNC':
                     updateGameState(message.payload);
                     break;
                 case 'NOTIFY_DRAW_CARD':
-                    updateGameLog(`${message.payload.playerId} が山札を引きました`);
+                    updateGameLog(`${getPlayerName(message.payload.playerId)} が山札を引きました`);
                     break;
                 case 'NOTIFY_USE_CARD':
-                    updateGameLog(`${message.payload.cardType} が使用されました`);
+                    updateGameLog(`${cardNames[message.payload.cardType] || message.payload.cardType} が使用されました`);
+                    break;
+                case 'NOTIFY_DISCARD_CARD':
+                    updateGameLog(`${getPlayerName(message.payload.playerId)} が ${cardNames[message.payload.cardType] || message.payload.cardType} を捨てました`);
                     break;
                 case 'NOTIFY_PLAYER_DIED':
                     const causes = {
@@ -573,13 +606,19 @@
                     updateGameLog(`プレイヤーが死亡しました (${causes[message.payload.cause] || message.payload.cause})`);
                     break;
                 case 'TURN_CHANGED':
-                    updateGameLog(`${message.payload.currentTurnPlayerId} の手番です`);
+                    appState.currentTurnPlayerId = message.payload.currentTurnPlayerId;
+                    document.getElementById('currentPlayer').textContent = getPlayerName(appState.currentTurnPlayerId);
+                    updateGameLog(`${getPlayerName(appState.currentTurnPlayerId)} の手番です`);
+                    updateActionPanel();
                     break;
                 case 'PHASE_CHANGED':
                     updateGameLog(`フェイズが ${message.payload.newPhase} に変わりました`);
                     break;
                 case 'GAME_RESULT':
                     showResultScreen(message.payload);
+                    break;
+                case 'ERROR':
+                    updateGameLog(message.payload.message || 'エラーが発生しました');
                     break;
                 case 'NOTIFY_REMATCH_STARTING':
                     appState.gameStarted = false;
@@ -591,12 +630,19 @@
         }
 
         function updateGameScreen(payload) {
-            document.getElementById('currentPlayer').textContent =
-                appState.userName === 'ホスト' ? 'ゲーム開始' : 'ゲーム進行中';
+            appState.players = payload.players || appState.players || [];
+            appState.currentTurnPlayerId = payload.firstTurnPlayerId || appState.currentTurnPlayerId;
+            document.getElementById('currentPlayer').textContent = getPlayerName(appState.currentTurnPlayerId);
             updatePlayerBoard(payload.players || []);
+            updateActionPanel();
         }
 
         function updateGameState(payload) {
+            appState.players = payload.players || appState.players || [];
+            appState.currentTurnPlayerId = payload.currentTurnPlayerId || appState.currentTurnPlayerId;
+            appState.myHand = payload.myHand || appState.myHand || [];
+            appState.deckRemainingCount = payload.deckRemainingCount || 0;
+
             document.getElementById('currentPhase').textContent =
                 payload.phase === 'STORY' ? 'ストーリーフェイズ' :
                 payload.phase === 'LAST_TURN' ? '最後の手番フェイズ' :
@@ -605,7 +651,62 @@
                 payload.phase;
 
             document.getElementById('deckCount').textContent = payload.deckRemainingCount;
+            document.getElementById('currentPlayer').textContent = getPlayerName(appState.currentTurnPlayerId);
             updatePlayerBoard(payload.players || []);
+            updateActionPanel();
+        }
+
+        function getPlayerName(playerId) {
+            if (!playerId) return '-';
+            const player = (appState.players || []).find(p => p.playerId === playerId);
+            return player ? player.userName : playerId;
+        }
+
+        function updateActionPanel() {
+            const panel = document.getElementById('actionPanel');
+            if (!panel) return;
+
+            const isMyTurn = appState.currentTurnPlayerId === appState.playerId;
+            if (!isMyTurn) {
+                panel.innerHTML = `<div class="message" style="grid-column: 1 / -1; margin: 0;">${getPlayerName(appState.currentTurnPlayerId)} の手番です</div>`;
+                return;
+            }
+
+            const hand = appState.myHand || [];
+            const canDraw = appState.deckRemainingCount > 0 && hand.length < 2;
+            const buttons = [];
+
+            if (canDraw) {
+                buttons.push('<button onclick="drawCard()">山札を引く</button>');
+            }
+
+            hand.forEach(card => {
+                const name = cardNames[card.cardType] || card.cardType;
+                const disabled = card.cardType === 'CURSED_RING' ? 'disabled style="background:#999; cursor:not-allowed;"' : '';
+                buttons.push(`<button onclick="discardCard('${card.cardId}')" ${disabled}>${name} を捨てる</button>`);
+            });
+
+            if (buttons.length === 0) {
+                buttons.push('<div class="message" style="grid-column: 1 / -1; margin: 0;">操作できるカードがありません</div>');
+            }
+
+            panel.innerHTML = buttons.join('');
+        }
+
+        function sendSocketMessage(type, payload = {}) {
+            if (appState.socket && appState.socket.readyState === WebSocket.OPEN) {
+                appState.socket.send(JSON.stringify({ type, payload }));
+            } else {
+                updateGameLog('サーバーとの接続が切れています');
+            }
+        }
+
+        function drawCard() {
+            sendSocketMessage('ACTION_DRAW_CARD');
+        }
+
+        function discardCard(cardId) {
+            sendSocketMessage('ACTION_DISCARD_CARD', { cardId });
         }
 
         function updatePlayerBoard(players) {
