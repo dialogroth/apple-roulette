@@ -320,6 +320,11 @@ class GameActionHandler {
                 return Pair(gameState, "手札にそのカードがありません")
             }
 
+            val currentHand = GameEngine.getPlayerHand(gameState, currentPlayerId)
+            if (gameState.phase == GamePhase.STORY && currentHand.size < 2) {
+                return Pair(gameState, "山札を引いた後にカードを捨ててください")
+            }
+
             // 呪いの指輪は廃棄不可
             if (card.cardType == CardType.CURSED_RING) {
                 return Pair(gameState, "呪いの指輪は廃棄できません")

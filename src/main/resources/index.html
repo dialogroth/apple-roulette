@@ -596,6 +596,9 @@
                 case 'NOTIFY_DISCARD_CARD':
                     updateGameLog(`${getPlayerName(message.payload.playerId)} が ${cardNames[message.payload.cardType] || message.payload.cardType} を捨てました`);
                     break;
+                case 'YOUR_APPLE_STATUS':
+                    updateGameLog(`あなたのリンゴは${message.payload.isPoisoned ? '毒リンゴ' : '通常リンゴ'}です`);
+                    break;
                 case 'NOTIFY_PLAYER_DIED':
                     const causes = {
                         'POISON_APPLE': '毒リンゴ',
@@ -673,24 +676,51 @@
             }
 
             const hand = appState.myHand || [];
-            const canDraw = appState.deckRemainingCount > 0 && hand.length < 2;
-            const buttons = [];
-
-            if (canDraw) {
-                buttons.push('<button onclick="drawCard()">山札を引く</button>');
+            if (hand.length >= 2) {
+                panel.innerHTML = hand.map(card => {
+                    const name = cardNames[card.cardType] || card.cardType;
+                    const canUse = !['CURSED_RING', 'KNIGHT', 'GUARD'].includes(card.cardType);
+                    const canDiscard = card.cardType !== 'CURSED_RING';
+                    return `
+                        <div style="background:white; padding:10px; border-radius:4px;">
+                            <p style="margin:0 0 8px 0; font-weight:bold; font-size:13px;">${name}</p>
+                            <button onclick="useCard('${card.cardId}', '${card.cardType}')" ${canUse ? '' : 'disabled style="background:#999; cursor:not-allowed;"'}>使う</button>
+                            <button onclick="discardCard('${card.cardId}')" ${canDiscard ? 'style="background:#777;"' : 'disabled style="background:#999; cursor:not-allowed;"'}>捨てる</button>
+                        </div>
+                    `;
+                }).join('');
+                return;
             }
 
-            hand.forEach(card => {
-                const name = cardNames[card.cardType] || card.cardType;
-                const disabled = card.cardType === 'CURSED_RING' ? 'disabled style="background:#999; cursor:not-allowed;"' : '';
-                buttons.push(`<button onclick="discardCard('${card.cardId}')" ${disabled}>${name} を捨てる</button>`);
-            });
-
-            if (buttons.length === 0) {
-                buttons.push('<div class="message" style="grid-column: 1 / -1; margin: 0;">操作できるカードがありません</div>');
-            }
+            const canDraw = appState.deckRemainingCount > 0;
+            const canUseAbility = appState.myRole === 'GRAY' || appState.myRole === 'LIGHT';
+            const buttons = [
+                `<button onclick="drawCard()" ${canDraw ? '' : 'disabled style="background:#999; cursor:not-allowed;"'}>山札を引く</button>`,
+                '<button onclick="exchangeHand()">手札を交換する</button>',
+                '<button onclick="exchangeApple()">リンゴを交換する</button>',
+                '<button onclick="checkOwnApple()">自分のリンゴを確認する</button>',
+                `<button onclick="useAbility()" ${canUseAbility ? '' : 'disabled style="background:#999; cursor:not-allowed;"'}>キャラクター能力</button>`
+            ];
 
             panel.innerHTML = buttons.join('');
+        }
+
+        function aliveOtherPlayers() {
+            return (appState.players || []).filter(p => p.playerId !== appState.playerId && p.isAlive);
+        }
+
+        function selectPlayer(promptTitle, players = aliveOtherPlayers()) {
+            if (!players.length) {
+                updateGameLog('対象にできるプレイヤーがいません');
+                return null;
+            }
+
+            const text = players.map((p, index) => `${index + 1}: ${p.userName}`).join('\n');
+            const answer = window.prompt(`${promptTitle}\n${text}`);
+            if (!answer) return null;
+
+            const index = Number(answer) - 1;
+            return players[index]?.playerId || null;
         }
 
         function sendSocketMessage(type, payload = {}) {
@@ -707,6 +737,76 @@
 
         function discardCard(cardId) {
             sendSocketMessage('ACTION_DISCARD_CARD', { cardId });
+        }
+
+        function useCard(cardId, cardType) {
+            const params = buildCardParams(cardType);
+            if (params === null) return;
+            sendSocketMessage('ACTION_USE_CARD', { cardId, cardType, params });
+        }
+
+        function buildCardParams(cardType) {
+            switch (cardType) {
+                case 'APPLE_QUESTION':
+                case 'MUSHROOM_QUESTION':
+                case 'KNIFE':
+                case 'ROPE':
+                case 'POISON_COMB': {
+                    const targetPlayerId = selectPlayer('対象プレイヤーを番号で選んでください');
+                    return targetPlayerId ? { targetPlayerId } : null;
+                }
+                case 'ITADAKIMASU': {
+                    const count = Number(window.prompt('捨てる山札の枚数を入力してください（1〜3）', '1'));
+                    if (!Number.isInteger(count) || count < 1 || count > 3) {
+                        updateGameLog('1〜3の枚数を入力してください');
+                        return null;
+                    }
+                    return { count };
+                }
+                case 'ROULETTE_1':
+                case 'ROULETTE_2':
+                case 'ROULETTE_3':
+                    return { direction: window.confirm('時計回りに回しますか？\nOK: 時計回り / キャンセル: 反時計回り') ? 'CLOCKWISE' : 'COUNTER_CLOCKWISE' };
+                case 'PRESENT_EXCHANGE': {
+                    const players = aliveOtherPlayers();
+                    const targetPlayerIdA = selectPlayer('交換対象Aを番号で選んでください', players);
+                    if (!targetPlayerIdA) return null;
+                    const targetPlayerIdB = selectPlayer('交換対象Bを番号で選んでください', players.filter(p => p.playerId !== targetPlayerIdA));
+                    return targetPlayerIdB ? { targetPlayerIdA, targetPlayerIdB } : null;
+                }
+                default:
+                    updateGameLog('このカードは使用できません');
+                    return null;
+            }
+        }
+
+        function exchangeHand() {
+            const targetPlayerId = selectPlayer('手札を交換する相手を番号で選んでください');
+            if (targetPlayerId) sendSocketMessage('ACTION_EXCHANGE_HAND', { targetPlayerId });
+        }
+
+        function exchangeApple() {
+            const targetPlayerId = selectPlayer('リンゴを交換する相手を番号で選んでください');
+            if (targetPlayerId) sendSocketMessage('ACTION_EXCHANGE_APPLE', { targetPlayerId });
+        }
+
+        function checkOwnApple() {
+            sendSocketMessage('ACTION_CHECK_OWN_APPLE');
+        }
+
+        function useAbility() {
+            if (appState.myRole === 'GRAY') {
+                sendSocketMessage('ACTION_USE_ABILITY', { params: {} });
+                return;
+            }
+
+            if (appState.myRole === 'LIGHT') {
+                const players = aliveOtherPlayers();
+                const targetPlayerIdA = selectPlayer('リンゴ交換対象Aを番号で選んでください', players);
+                if (!targetPlayerIdA) return;
+                const targetPlayerIdB = selectPlayer('リンゴ交換対象Bを番号で選んでください', players.filter(p => p.playerId !== targetPlayerIdA));
+                if (targetPlayerIdB) sendSocketMessage('ACTION_USE_ABILITY', { params: { targetPlayerIdA, targetPlayerIdB } });
+            }
         }
 
         function updatePlayerBoard(players) {

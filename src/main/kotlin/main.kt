@@ -549,10 +549,15 @@ suspend fun handleActionExchangeHand(
         return
     }
 
-    games[gameState.gameId] = updatedState
+    val nextState = GameEngine.getNextTurnState(updatedState)
+    games[gameState.gameId] = nextState
 
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyExchangeHandMessage(playerId.toString(), targetPlayerId.toString()))
-    GameInitializer.sendGameStateSync(roomId, updatedState, wsManager)
+    GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
+    wsManager.broadcastToRoom(
+        roomId,
+        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
+    )
 }
 
 suspend fun handleActionExchangeApple(
@@ -575,11 +580,16 @@ suspend fun handleActionExchangeApple(
         return
     }
 
-    games[gameState.gameId] = updatedState
+    val nextState = GameEngine.getNextTurnState(updatedState)
+    games[gameState.gameId] = nextState
 
     wsManager.broadcastToRoom(roomId, WsHelpers.notifyExchangeAppleMessage(playerId.toString(), targetPlayerId.toString()))
-    GameInitializer.sendBlackAppleUpdate(updatedState, roomId, wsManager)
-    GameInitializer.sendGameStateSync(roomId, updatedState, wsManager)
+    GameInitializer.sendBlackAppleUpdate(nextState, roomId, wsManager)
+    GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
+    wsManager.broadcastToRoom(
+        roomId,
+        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
+    )
 }
 
 suspend fun handleActionCheckOwnApple(
@@ -601,7 +611,13 @@ suspend fun handleActionCheckOwnApple(
         wsManager.sendToPlayer(playerId, WsHelpers.yourAppleStatusMessage(myApple.appleId.toString(), myApple.isPoisoned))
     }
 
-    games[gameState.gameId] = updatedState
+    val nextState = GameEngine.getNextTurnState(updatedState)
+    games[gameState.gameId] = nextState
+    GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
+    wsManager.broadcastToRoom(
+        roomId,
+        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
+    )
 }
 
 suspend fun handleActionUseAbility(
@@ -637,8 +653,13 @@ suspend fun handleActionUseAbility(
         }
     }
 
-    games[gameState.gameId] = updatedState
-    GameInitializer.sendGameStateSync(roomId, updatedState, wsManager)
+    val nextState = GameEngine.getNextTurnState(updatedState)
+    games[gameState.gameId] = nextState
+    GameInitializer.sendGameStateSync(roomId, nextState, wsManager)
+    wsManager.broadcastToRoom(
+        roomId,
+        WsHelpers.turnChangedMessage(nextState.turnOrder[nextState.currentTurnIndex].toString(), 180)
+    )
 }
 
 suspend fun handleResponsePreference(
