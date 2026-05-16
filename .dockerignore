@@ -1,0 +1,11 @@
+.git
+.gradle
+.idea
+.kotlin
+build
+.git*
+.DS_Store
+*.log
+target
+*.class
+

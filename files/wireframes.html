@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>白雪姫のアップルルーレット — ワイヤーフレーム集</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/tabler-icons.min.css">
+<style>
+/* ===== CSS変数 ===== */
+:root {
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f3f4f6;
+  --color-background-info: #eff6ff;
+  --color-background-danger: #fff0f0;
+  --color-border-primary: #9ca3af;
+  --color-border-secondary: #d1d5db;
+  --color-border-tertiary: #e5e7eb;
+  --color-border-danger: #fca5a5;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
+  --color-text-success: #1D9E75;
+  --color-text-danger: #E24B4A;
+  --color-text-info: #2563eb;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --font-mono: 'SFMono-Regular', 'Consolas', monospace;
+}
+
+/* ===== リセット & ベース ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #1e1e2e; color: var(--color-text-primary); display: flex; min-height: 100vh; }
+
+/* ===== サイドバー ===== */
+.sidebar {
+  width: 200px; flex-shrink: 0;
+  background: #16162a; border-right: 1px solid #2e2e4a;
+  display: flex; flex-direction: column;
+  padding: 20px 0;
+}
+.sidebar-title {
+  font-size: 11px; font-weight: 700; color: #6b7280;
+  letter-spacing: 0.08em; padding: 0 16px 12px;
+  border-bottom: 1px solid #2e2e4a; margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 16px; cursor: pointer;
+  font-size: 13px; color: #9ca3af;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.nav-item:hover { color: #e5e7eb; background: #1e1e3a; }
+.nav-item.active { color: #ffffff; background: #1e1e3a; border-left-color: #5DCAA5; }
+.nav-item .nav-num {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #2e2e4a; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #6b7280;
+}
+.nav-item.active .nav-num { background: #1D9E75; color: #fff; }
+
+/* ===== メインエリア ===== */
+.main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 32px; overflow-y: auto; }
+
+/* ===== 画面コンテナ ===== */
+.screen-wrap { display: none; flex-direction: column; align-items: center; gap: 20px; }
+.screen-wrap.active { display: flex; }
+.screen-label {
+  font-size: 13px; font-weight: 500; color: #9ca3af;
+  background: #16162a; padding: 6px 16px; border-radius: 20px;
+  border: 1px solid #2e2e4a;
+}
+
+/* ===== スマホフレーム ===== */
+.phone-frame {
+  background: #f3f4f6; border-radius: 28px; padding: 12px;
+  border: 1.5px solid #4b4b6a; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  width: 320px;
+}
+.phone-status {
+  height: 22px; display: flex; justify-content: space-between;
+  padding: 0 8px; align-items: center; margin-bottom: 4px;
+}
+.phone-status span { font-size: 12px; color: var(--color-text-secondary); }
+.phone-screen {
+  background: var(--color-background-primary);
+  border-radius: 18px; overflow: hidden;
+}
+
+/* ===== 共通UI部品 ===== */
+button {
+  font-family: inherit; font-size: 13px; cursor: pointer;
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-secondary);
+  color: var(--color-text-primary); border-radius: var(--border-radius-md);
+  padding: 8px 12px; transition: opacity 0.15s;
+}
+button:disabled { cursor: default; }
+button:not(:disabled):hover { opacity: 0.8; }
+input[type="text"], input[type="range"] { font-family: inherit; }
+input[type="text"] {
+  width: 100%; padding: 9px 12px; border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md); font-size: 13px;
+  background: var(--color-background-primary); color: var(--color-text-primary);
+  outline: none;
+}
+input[type="text"]:focus { border-color: #1D9E75; }
+input[type="range"] { width: 100%; accent-color: #1D9E75; }
+
+/* ===== スクロール非表示 ===== */
+.no-scroll { overflow-y: auto; scrollbar-width: none; }
+.no-scroll::-webkit-scrollbar { display: none; }
+
+/* ===== 共通クラス ===== */
+.pcard { background: var(--color-background-secondary); border-radius: 10px; padding: 10px; border: 0.5px solid var(--color-border-tertiary); position: relative; }
+.pcard.dead { opacity: 0.38; }
+.pcard.current { border-color: #1D9E75; border-width: 1.5px; }
+.av { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.hbtn { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); font-size: 10px; font-weight: 700; color: var(--color-text-tertiary); cursor: pointer; flex-shrink: 0; padding: 0; }
+.skip-badge { font-size: 11px; position: absolute; top: 5px; right: 5px; }
+.pref { display: inline-flex; align-items: center; gap: 1px; font-size: 10px; color: var(--color-text-tertiary); }
+.pref .lk { font-size: 9px; opacity: 0.6; }
+.sel-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0.5px solid var(--color-border-tertiary); border-radius: 10px; background: var(--color-background-secondary); cursor: pointer; }
+.sel-card:hover { border-color: #1D9E75; }
+.sel-card.disabled { opacity: 0.45; cursor: default; pointer-events: none; }
+.sel-card.selected { border-color: #1D9E75; border-width: 1.5px; }
+.subtab { flex: 1; padding: 5px 0; font-size: 10px; border: none; cursor: pointer; background: none; color: var(--color-text-secondary); }
+.subtab.active { background: var(--color-background-secondary); font-weight: 600; color: var(--color-text-primary); }
+.log-row { display: flex; gap: 8px; padding: 9px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 12px; line-height: 1.5; }
+.log-row:last-child { border-bottom: none; }
+.log-who { color: var(--color-text-tertiary); flex-shrink: 0; min-width: 44px; }
+</style>
+</head>
+<body>
+
+<!-- ===== サイドバー ===== -->
+<nav class="sidebar">
+  <div class="sidebar-title">画面一覧</div>
+  <div class="nav-item active" onclick="showScreen(0)"><span class="nav-num">1</span>スタート</div>
+  <div class="nav-item" onclick="showScreen(1)"><span class="nav-num">2</span>ルーム作成</div>
+  <div class="nav-item" onclick="showScreen(2)"><span class="nav-num">3</span>ルーム参加</div>
+  <div class="nav-item" onclick="showScreen(3)"><span class="nav-num">4</span>ルーム待機</div>
+  <div class="nav-item" onclick="showScreen(4)"><span class="nav-num">5</span>ゲームメイン</div>
+  <div class="nav-item" onclick="showScreen(5)"><span class="nav-num">6</span>エンディング</div>
+  <div class="nav-item" onclick="showScreen(6)"><span class="nav-num">7</span>勝敗画面</div>
+</nav>
+
+<!-- ===== メインエリア ===== -->
+<main class="main">
+
+<!-- ==============================
+  画面1：スタート画面
+============================== -->
+<div class="screen-wrap active" id="sc0">
+  <div class="screen-label">① スタート画面</div>
+  <div class="phone-frame">
+    <div class="phone-status"><span>9:41</span><div style="display:flex;gap:5px;"><i class="ti ti-wifi" style="font-size:14px;color:var(--color-text-secondary);"></i><i class="ti ti-battery" style="font-size:14px;color:var(--color-text-secondary);"></i></div></div>
+    <div class="phone-screen" style="padding:28px 20px 20px;min-height:520px;display:flex;flex-direction:column;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,#E1F5EE,#b7f0d8);border:0.5px solid #5DCAA5;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:46px;line-height:1;box-shadow:0 4px 16px rgba(29,158,117,0.2);">🍎</div>
+        <p style="font-size:15px;font-weight:600;margin:0 0 5px;">白雪姫のアップルルーレット</p>
+        <p style="font-size:12px;color:var(--color-text-secondary);margin:0;">4〜9人の正体隠匿ゲーム</p>
+      </div>
+      <hr style="border:none;border-top:0.5px solid var(--color-border-tertiary);margin:0 0 20px;">
+      <div style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <label style="font-size:13px;font-weight:500;">プレイヤー名</label>
+          <span id="s1-cc" style="font-size:12px;color:var(--color-text-tertiary);">0 / 12</span>
+        </div>
+        <input type="text" id="s1-inp" maxlength="12" placeholder="名前を入力してください" oninput="s1Update(this.value)">
+        <p style="font-size:11px;color:var(--color-text-tertiary);margin:5px 0 0;">1〜12文字。同一ルーム内で重複不可</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button id="s1-btn1" disabled style="width:100%;padding:11px;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:7px;opacity:0.35;"><i class="ti ti-plus" style="font-size:16px;"></i>部屋を作る</button>
+        <button id="s1-btn2" disabled style="width:100%;padding:11px;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:7px;opacity:0.35;"><i class="ti ti-door-enter" style="font-size:16px;"></i>部屋に入る</button>
+      </div>
+      <p style="font-size:12px;color:var(--color-text-tertiary);text-align:center;margin-top:auto;padding-top:16px;">4〜8名でプレイ可能</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================
+  画面2：ルーム作成画面
+============================== -->
+<div class="screen-wrap" id="sc1">
+  <div class="screen-label">② ルーム作成画面</div>
+  <div class="phone-frame">
+    <div class="phone-status"><span>9:41</span><div style="display:flex;gap:5px;"><i class="ti ti-wifi" style="font-size:14px;color:var(--color-text-secondary);"></i><i class="ti ti-battery" style="font-size:14px;color:var(--color-text-secondary);"></i></div></div>
+    <div class="phone-screen" style="padding:0 16px 16px;max-height:580px;overflow-y:auto;scrollbar-width:none;">
+      <div style="display:flex;align-items:center;gap:8px;padding:12px 0 10px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:14px;">
+        <button style="background:none;border:none;padding:0;font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:3px;"><i class="ti ti-arrow-left" style="font-size:15px;"></i>戻る</button>
+        <span style="font-size:14px;font-weight:600;flex:1;text-align:center;margin-right:44px;">部屋を作る</span>
+      </div>
+      <p style="font-size:11px;font-weight:600;color:var(--color-text-secondary);margin:0 0 8px;">毒リンゴの枚数</p>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <input type="range" id="poison-slider" min="1" max="4" value="2" oninput="document.getElementById('poison-val').textContent=this.value+'枚'">
+        <span id="poison-val" style="font-size:13px;font-weight:600;min-width:28px;">2枚</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);margin-bottom:14px;"><span>1枚</span><span id="poison-max-label">4枚</span></div>
+      <hr style="border:none;border-top:0.5px solid var(--color-border-tertiary);margin:0 0 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <p style="font-size:11px;font-weight:600;color:var(--color-text-secondary);margin:0;">役職の組み合わせ</p>
+        <span id="role-count" style="font-size:11px;color:var(--color-text-secondary);">5人分</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">
+        <span id="rc0" onclick="toggleRole(0)" style="padding:4px 9px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid #5DCAA5;background:#E1F5EE;color:#085041;">白雪姫</span>
+        <span id="rc1" onclick="toggleRole(1)" style="padding:4px 9px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid #AFA9EC;background:#EEEDFE;color:#26215C;">女王</span>
+        <span id="rc2" onclick="toggleRole(2)" style="padding:4px 9px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid #5DCAA5;background:#E1F5EE;color:#085041;">グリーン</span>
+        <span id="rc3" onclick="toggleRole(3)" style="padding:4px 9px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid #AFA9EC;background:#EEEDFE;color:#26215C;">ブラック</span>
+        <span id="rc4" onclick="toggleRole(4)" style="padding:4px 9px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid #5DCAA5;background:#E1F5EE;color:#085041;">ライト</span>
+        <span id="rc5" onclick="toggleRole(5)" style="padding:4px 9px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);color:var(--color-text-tertiary);opacity:0.6;">ブラウン</span>
+        <span id="rc6" onclick="toggleRole(6)" style="padding:4px 9px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);color:var(--color-text-tertiary);opacity:0.6;">グレイ</span>
+        <span id="rc7" onclick="toggleRole(7)" style="padding:4px 9px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);color:var(--color-text-tertiary);opacity:0.6;">ネイビー</span>
+        <span id="rc8" onclick="toggleRole(8)" style="padding:4px 9px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);color:var(--color-text-tertiary);opacity:0.6;">ロゼ</span>
+      </div>
+      <p style="font-size:10px;color:var(--color-text-tertiary);margin:0 0 14px;">緑=白雪姫陣営　紫=女王陣営　黄=第三陣営</p>
+      <hr style="border:none;border-top:0.5px solid var(--color-border-tertiary);margin:0 0 14px;">
+      <p style="font-size:11px;font-weight:600;color:var(--color-text-secondary);margin:0 0 6px;">カードの枚数</p>
+      <div id="card-list"></div>
+      <button onclick="resetCards()" style="width:100%;margin-top:8px;font-size:11px;padding:6px;display:flex;align-items:center;justify-content:center;gap:4px;"><i class="ti ti-refresh" style="font-size:13px;"></i>デフォルトに戻す</button>
+      <hr style="border:none;border-top:0.5px solid var(--color-border-tertiary);margin:14px 0 12px;">
+      <button style="width:100%;padding:11px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="ti ti-door-enter" style="font-size:15px;"></i>ルームを作成する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================
+  画面3：ルーム参加画面
+============================== -->
+<div class="screen-wrap" id="sc2">
+  <div class="screen-label">③ ルーム参加画面</div>
+  <div class="phone-frame">
+    <div class="phone-status"><span>9:41</span><div style="display:flex;gap:5px;"><i class="ti ti-wifi" style="font-size:14px;color:var(--color-text-secondary);"></i><i class="ti ti-battery" style="font-size:14px;color:var(--color-text-secondary);"></i></div></div>
+    <div class="phone-screen" style="padding:0 16px 24px;min-height:460px;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:8px;padding:12px 0 10px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:32px;">
+        <button style="background:none;border:none;padding:0;font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:3px;"><i class="ti ti-arrow-left" style="font-size:15px;"></i>戻る</button>
+        <span style="font-size:14px;font-weight:600;flex:1;text-align:center;margin-right:44px;">部屋に入る</span>
+      </div>
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="width:60px;height:60px;border-radius:16px;background:#EEEDFE;border:0.5px solid #AFA9EC;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+          <i class="ti ti-key" style="font-size:28px;color:#534AB7;"></i>
+        </div>
+        <p style="font-size:13px;font-weight:600;margin:0 0 4px;">ルームコードを入力</p>
+        <p style="font-size:11px;color:var(--color-text-secondary);margin:0;">ホストから共有された6桁のコード</p>
+      </div>
+      <div style="margin-bottom:20px;">
+        <input type="text" id="code-inp" maxlength="6" placeholder="例：ABC123" oninput="codeUpdate(this.value)" style="text-align:center;font-size:22px;font-weight:600;letter-spacing:6px;padding:12px;font-family:var(--font-mono);text-transform:uppercase;">
+        <div id="code-err" style="display:none;margin-top:8px;padding:8px 12px;background:var(--color-background-danger);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-danger);">
+          <p id="code-err-msg" style="font-size:12px;color:var(--color-text-danger);margin:0;display:flex;align-items:center;gap:5px;"><i class="ti ti-alert-circle" style="font-size:13px;"></i>ルームが見つかりません</p>
+        </div>
+      </div>
+      <button id="join-btn" disabled style="width:100%;padding:11px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;opacity:0.35;"><i class="ti ti-door-enter" style="font-size:15px;"></i>参加する</button>
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;">
+        <button onclick="showCodeErr('ルームが見つかりません')" style="background:none;border:none;font-size:11px;color:var(--color-text-tertiary);text-decoration:underline;cursor:pointer;">エラー①</button>
+        <button onclick="showCodeErr('同じ名前のプレイヤーがすでにいます')" style="background:none;border:none;font-size:11px;color:var(--color-text-tertiary);text-decoration:underline;cursor:pointer;">エラー②（名前重複）</button>
+        <button onclick="document.getElementById('code-err').style.display='none'" style="background:none;border:none;font-size:11px;color:var(--color-text-tertiary);text-decoration:underline;cursor:pointer;">非表示</button>
+      </div>
+      <p style="font-size:11px;color:var(--color-text-tertiary);text-align:center;margin:auto 0 0;padding-top:16px;">満員または存在しないルームには入れません</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================
+  画面4：ルーム待機画面
+============================== -->
+<div class="screen-wrap" id="sc3">
+  <div class="screen-label">④ ルーム待機画面</div>
+  <div style="display:flex;gap:0;border:1px solid #2e2e4a;border-radius:8px;overflow:hidden;margin-bottom:4px;">
+    <button id="wt0" onclick="setWaitTab(0)" style="flex:1;padding:6px 20px;font-size:12px;background:#16162a;color:#fff;font-weight:500;border:none;cursor:pointer;">ホスト</button>
+    <button id="wt1" onclick="setWaitTab(1)" style="flex:1;padding:6px 20px;font-size:12px;background:none;color:#9ca3af;border:none;cursor:pointer;">ゲスト</button>
+  </div>
+  <div class="phone-frame">
+    <div class="phone-status"><span>9:41</span><div style="display:flex;gap:5px;"><i class="ti ti-wifi" style="font-size:14px;color:var(--color-text-secondary);"></i><i class="ti ti-battery" style="font-size:14px;color:var(--color-text-secondary);"></i></div></div>
+    <div class="phone-screen" style="padding:0 16px 16px;">
+      <div style="padding:12px 0 10px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:14px;text-align:center;">
+        <span style="font-size:14px;font-weight:600;">待機中</span>
+      </div>
+      <div style="background:var(--color-background-secondary);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <p style="font-size:10px;color:var(--color-text-secondary);margin:0 0 2px;">ルームコード</p>
+          <p style="font-size:22px;font-weight:600;letter-spacing:4px;font-family:var(--font-mono);margin:0;">XK7T3R</p>
+        </div>
+        <button style="display:flex;align-items:center;gap:4px;font-size:11px;padding:6px 10px;"><i class="ti ti-copy" style="font-size:13px;"></i>コピー</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <p style="font-size:11px;font-weight:600;color:var(--color-text-secondary);margin:0;">参加者</p>
+        <span style="font-size:11px;color:var(--color-text-secondary);">4 / 9 人</span>
+      </div>
+      <div style="border:0.5px solid var(--color-border-tertiary);border-radius:10px;overflow:hidden;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);">
+          <div class="av" style="background:#E1F5EE;color:#085041;">さ</div>
+          <span style="font-size:13px;flex:1;">さくら</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">ホスト</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);">
+          <div class="av" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);">た</div>
+          <span style="font-size:13px;flex:1;">たろう</span>
+          <span style="font-size:11px;color:var(--color-text-success);">● 接続中</span>
+        </div>
+        <!-- 切断 → 空席 -->
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);opacity:0.4;">
+          <div class="av" style="background:var(--color-background-secondary);border:1px dashed var(--color-border-secondary);color:var(--color-text-tertiary);">—</div>
+          <span style="font-size:13px;flex:1;color:var(--color-text-tertiary);">空席</span>
+          <span style="font-size:11px;color:var(--color-text-tertiary);">— 切断</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;">
+          <div class="av" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);">け</div>
+          <span style="font-size:13px;flex:1;">けんじ</span>
+          <span style="font-size:11px;color:var(--color-text-success);">● 接続中</span>
+        </div>
+      </div>
+      <div id="wa-host" style="display:flex;flex-direction:column;gap:8px;">
+        <button style="width:100%;padding:11px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="ti ti-player-play" style="font-size:15px;"></i>ゲームを開始する</button>
+        <button style="width:100%;padding:8px;font-size:12px;color:var(--color-text-danger);border-color:var(--color-border-danger);display:flex;align-items:center;justify-content:center;gap:5px;"><i class="ti ti-door-exit" style="font-size:14px;"></i>ルームを解散する</button>
+      </div>
+      <div id="wa-guest" style="display:none;flex-direction:column;gap:8px;">
+        <div style="padding:12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);text-align:center;">
+          <p style="font-size:12px;color:var(--color-text-secondary);margin:0;">ホストがゲームを開始するまでお待ちください</p>
+        </div>
+        <button style="width:100%;padding:8px;font-size:12px;color:var(--color-text-danger);border-color:var(--color-border-danger);display:flex;align-items:center;justify-content:center;gap:5px;"><i class="ti ti-door-exit" style="font-size:14px;"></i>ルームを退出する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================
+  画面5：ゲームメイン画面
+============================== -->
+<div class="screen-wrap" id="sc4">
+  <div class="screen-label">⑤ ゲームメイン画面</div>
+  <div style="display:flex;gap:0;border:1px solid #2e2e4a;border-radius:8px;overflow:hidden;margin-bottom:4px;width:300px;">
+    <button id="gv0" onclick="setGameView(0)" style="flex:1;padding:5px 0;font-size:10px;border:none;cursor:pointer;background:#16162a;font-weight:500;color:#fff;">自分の手番</button>
+    <button id="gv1" onclick="setGameView(1)" style="flex:1;padding:5px 0;font-size:10px;border:none;cursor:pointer;background:none;color:#9ca3af;">カード引いた後</button>
+    <button id="gv2" onclick="setGameView(2)" style="flex:1;padding:5px 0;font-size:10px;border:none;cursor:pointer;background:none;color:#9ca3af;">待機中</button>
+    <button id="gv3" onclick="setGameView(3)" style="flex:1;padding:5px 0;font-size:10px;border:none;cursor:pointer;background:none;color:#9ca3af;">②選択画面</button>
+  </div>
+  <div class="phone-frame" style="position:relative;">
+    <div class="phone-status"><span>9:41</span><div style="display:flex;gap:5px;"><i class="ti ti-wifi" style="font-size:13px;color:var(--color-text-secondary);"></i><i class="ti ti-battery" style="font-size:13px;color:var(--color-text-secondary);"></i></div></div>
+
+    <!-- ゲーム画面本体 -->
+    <div id="game-main" style="background:var(--color-background-primary);border-radius:16px;display:flex;flex-direction:column;">
+
+      <!-- フェイズバー -->
+      <div style="padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span style="background:#E1F5EE;color:#085041;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:500;">ストーリーフェイズ</span>
+          <button class="hbtn" onclick="gShowInfo('ストーリーフェイズ')">?</button>
+          <button onclick="gShowLog()" title="行動ログ" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;padding:0;flex-shrink:0;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
+            </svg>
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;gap:3px;"><i class="ti ti-clock" style="font-size:12px;color:var(--color-text-secondary);"></i><span style="font-size:12px;font-weight:600;">2:45</span></div>
+      </div>
+
+      <!-- 手番順バー -->
+      <div style="padding:6px 12px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);flex-shrink:0;overflow-x:auto;scrollbar-width:none;">
+        <div style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
+          <i class="ti ti-rotate-clockwise" style="font-size:11px;color:var(--color-text-tertiary);"></i>
+          <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:#E1F5EE;color:#085041;border:1px solid #1D9E75;">さくら</span>
+          <i class="ti ti-arrow-right" style="font-size:9px;color:var(--color-text-tertiary);"></i>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--color-background-primary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);">たろう ⏭️</span>
+          <i class="ti ti-arrow-right" style="font-size:9px;color:var(--color-text-tertiary);"></i>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;color:var(--color-text-tertiary);border:0.5px solid var(--color-border-tertiary);text-decoration:line-through;opacity:0.5;">けんじ</span>
+          <i class="ti ti-arrow-right" style="font-size:9px;color:var(--color-text-tertiary);opacity:0.4;"></i>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--color-background-primary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);">みき</span>
+          <i class="ti ti-arrow-right" style="font-size:9px;color:var(--color-text-tertiary);"></i>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--color-background-primary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);">はなこ</span>
+          <i class="ti ti-arrow-right" style="font-size:9px;color:var(--color-text-tertiary);"></i>
+          <span style="font-size:10px;color:var(--color-text-tertiary);">…</span>
+        </div>
+      </div>
+
+      <!-- スクロールエリア -->
+      <div class="no-scroll" style="max-height:232px;padding:10px 12px 8px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px;">
+          <div class="pcard current">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;"><div class="av" style="background:#E1F5EE;color:#085041;">さ</div><span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">さくら</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="display:inline-flex;align-items:center;gap:2px;opacity:0.5;"><i class="ti ti-apple" style="font-size:11px;color:var(--color-text-tertiary);"></i><i class="ti ti-lock" style="font-size:9px;color:var(--color-text-tertiary);"></i></span>
+              <div style="display:flex;align-items:center;gap:4px;"><span class="pref">り<i class="ti ti-lock lk"></i></span><span class="pref">き<i class="ti ti-lock lk"></i></span><button class="hbtn" onclick="gShowInfo('好み回答')">?</button></div>
+            </div>
+          </div>
+          <div class="pcard" style="border-color:#F0C040;border-width:1px;">
+            <div class="skip-badge">⏭️</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+              <div class="av" style="background:var(--color-background-info);color:var(--color-text-info);">た</div>
+              <span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">たろう</span>
+              <span style="font-size:9px;padding:1px 5px;border-radius:20px;background:#FFF8E6;color:#B07800;border:0.5px solid #F0C040;flex-shrink:0;">切断中</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="display:inline-flex;align-items:center;gap:2px;opacity:0.5;"><i class="ti ti-apple" style="font-size:11px;color:var(--color-text-tertiary);"></i><i class="ti ti-lock" style="font-size:9px;color:var(--color-text-tertiary);"></i></span>
+              <div style="display:flex;align-items:center;gap:4px;"><span class="pref">り<i class="ti ti-lock lk"></i></span><span class="pref">き<i class="ti ti-lock lk"></i></span></div>
+            </div>
+          </div>
+          <div class="pcard dead">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;"><div class="av" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-tertiary);">け</div><span style="font-size:12px;font-weight:600;flex:1;color:var(--color-text-tertiary);">けんじ</span><i class="ti ti-skull" style="font-size:12px;color:var(--color-text-tertiary);"></i></div>
+            <div style="display:flex;align-items:center;gap:3px;"><i class="ti ti-apple" style="font-size:11px;color:#E24B4A;"></i><span style="font-size:11px;color:#E24B4A;">毒リンゴ</span></div>
+          </div>
+          <div class="pcard">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;"><div class="av" style="background:#EEEDFE;color:#26215C;">み</div><span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">みき</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:3px;"><i class="ti ti-apple" style="font-size:11px;color:#1D9E75;"></i><span style="font-size:11px;color:var(--color-text-secondary);">通常</span></div>
+              <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:10px;color:var(--color-text-success);">り○</span><span class="pref">き<i class="ti ti-lock lk"></i></span></div>
+            </div>
+          </div>
+          <div class="pcard">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;"><div class="av" style="background:#FAEEDA;color:#412402;">は</div><span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">はなこ</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="display:inline-flex;align-items:center;gap:2px;opacity:0.5;"><i class="ti ti-apple" style="font-size:11px;color:var(--color-text-tertiary);"></i><i class="ti ti-lock" style="font-size:9px;color:var(--color-text-tertiary);"></i></span>
+              <div style="display:flex;gap:4px;"><span style="font-size:10px;color:var(--color-text-success);">り○</span><span style="font-size:10px;color:var(--color-text-danger);">き×</span></div>
+            </div>
+          </div>
+          <div style="visibility:hidden;"></div>
+        </div>
+        <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;display:flex;justify-content:center;align-items:flex-end;gap:16px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:56px;border-radius:7px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;"><i class="ti ti-stack-2" style="font-size:22px;color:var(--color-text-secondary);"></i></div><span style="font-size:10px;color:var(--color-text-secondary);">山札 15枚</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="width:44px;height:56px;border-radius:7px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;"><span style="font-size:10px;font-weight:500;color:var(--color-text-secondary);text-align:center;padding:4px;">ロープ</span></div><span style="font-size:10px;color:var(--color-text-secondary);">捨て山 8枚</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2px;"><button onclick="gShowDiscard()" style="font-size:11px;padding:5px 9px;display:flex;align-items:center;gap:3px;"><i class="ti ti-list" style="font-size:12px;"></i>全件</button></div>
+        </div>
+      </div>
+
+      <!-- 下部固定エリア -->
+      <div style="border-top:0.5px solid var(--color-border-tertiary);padding:8px 12px 10px;flex-shrink:0;">
+        <!-- 自分情報バー -->
+        <div style="background:var(--color-background-secondary);border-radius:8px;padding:8px 10px;margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:10px;color:var(--color-text-secondary);">役職</span><span style="font-size:11px;font-weight:600;padding:2px 8px;background:#E1F5EE;border-radius:20px;color:#085041;border:0.5px solid #5DCAA5;">グレイ</span><button class="hbtn" onclick="gShowInfo('グレイ')">?</button></div>
+          <div style="width:1px;height:14px;background:var(--color-border-tertiary);"></div>
+          <div style="display:flex;align-items:center;gap:4px;"><i class="ti ti-apple" style="font-size:12px;color:#1D9E75;"></i><span style="font-size:11px;">通常リンゴ</span><button class="hbtn" onclick="gShowInfo('自分のリンゴ')">?</button></div>
+          <div style="width:1px;height:14px;background:var(--color-border-tertiary);"></div>
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:10px;color:var(--color-text-secondary);">手札</span><span id="g-hand" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--color-border-secondary);border-radius:4px;background:var(--color-background-primary);">騎士</span><button id="g-hand-hbtn" class="hbtn" onclick="gShowInfo('騎士')">?</button></div>
+        </div>
+
+        <!-- 説明パネル -->
+        <div id="g-info-panel" style="display:none;background:var(--color-background-secondary);border-radius:8px;padding:9px 11px;margin-bottom:8px;border:0.5px solid var(--color-border-secondary);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px;">
+            <span id="g-info-title" style="font-size:12px;font-weight:600;flex:1;"></span>
+            <button onclick="gCloseInfo()" style="background:none;border:none;cursor:pointer;padding:0;color:var(--color-text-tertiary);font-size:15px;line-height:1;">×</button>
+          </div>
+          <p id="g-info-body" style="font-size:12px;color:var(--color-text-secondary);margin:0;line-height:1.65;white-space:pre-line;"></p>
+        </div>
+
+        <!-- アクション① 自分の手番 -->
+        <div id="ga0" style="display:flex;flex-direction:column;gap:5px;">
+          <p style="font-size:12px;font-weight:600;margin:0 0 3px;text-align:center;">あなたの手番です</p>
+          <button style="width:100%;padding:11px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:11px;font-weight:400;color:var(--color-text-secondary);">①</span>山札を引く</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+            <button onclick="setGameView(3)" style="padding:9px 4px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:3px;"><span style="font-size:10px;color:var(--color-text-secondary);">②</span>手札の交換</button>
+            <button onclick="setGameView(3)" style="padding:9px 4px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:3px;"><span style="font-size:10px;color:var(--color-text-secondary);">③</span>リンゴの交換</button>
+          </div>
+          <button style="width:100%;padding:9px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:3px;"><span style="font-size:10px;color:var(--color-text-secondary);">④</span>自分のリンゴを確認</button>
+          <button style="width:100%;padding:9px;font-size:12px;opacity:0.3;" disabled>⑤ キャラクター能力（使用済み）</button>
+        </div>
+
+        <!-- アクション② カード引いた後 -->
+        <div id="ga1" style="display:none;flex-direction:column;gap:6px;">
+          <p style="font-size:12px;font-weight:600;margin:0 0 2px;text-align:center;">カードを1枚引きました</p>
+
+          <!-- 通常カードの場合（デフォルト表示：例 騎士） -->
+          <div id="ga1-normal" style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div style="border:0.5px solid var(--color-border-secondary);border-radius:8px;padding:10px 8px;text-align:center;background:var(--color-background-secondary);position:relative;">
+                <button class="hbtn" onclick="gShowInfo('騎士')" style="position:absolute;top:6px;right:6px;">?</button>
+                <p style="font-size:10px;color:var(--color-text-secondary);margin:0 0 4px;">手持ち</p>
+                <p style="font-size:14px;font-weight:600;margin:0 0 9px;">騎士</p>
+                <button style="font-size:11px;padding:5px 0;width:100%;margin-bottom:4px;">使用</button>
+                <button style="font-size:11px;padding:5px 0;width:100%;">廃棄</button>
+              </div>
+              <div style="border:1.5px solid #1D9E75;border-radius:8px;padding:10px 8px;text-align:center;background:var(--color-background-secondary);position:relative;">
+                <button class="hbtn" onclick="gShowInfo('呪いの指輪')" style="position:absolute;top:6px;right:6px;">?</button>
+                <p style="font-size:10px;color:#0F6E56;margin:0 0 4px;">今引いた</p>
+                <p style="font-size:14px;font-weight:600;margin:0 0 9px;">呪いの指輪</p>
+                <button style="font-size:11px;padding:5px 0;width:100%;margin-bottom:4px;opacity:0.3;" disabled>使用</button>
+                <button style="font-size:11px;padding:5px 0;width:100%;opacity:0.3;" disabled>廃棄</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- いただきます。を引いた / 使用を押した後の枚数選択 -->
+          <div id="ga1-itadaki" style="display:none;flex-direction:column;gap:6px;">
+            <div style="border:1.5px solid #1D9E75;border-radius:8px;padding:10px 12px;background:var(--color-background-secondary);">
+              <p style="font-size:11px;color:#0F6E56;margin:0 0 6px;font-weight:500;">「いただきます。」を使用</p>
+              <p style="font-size:12px;color:var(--color-text-primary);margin:0 0 10px;">山札から何枚捨てますか？</p>
+              <div style="display:flex;gap:8px;">
+                <button id="itd1" onclick="selectItadaki(1)" style="flex:1;padding:12px 0;font-size:15px;font-weight:700;border-radius:8px;border:1.5px solid var(--color-border-secondary);background:var(--color-background-primary);cursor:pointer;">1</button>
+                <button id="itd2" onclick="selectItadaki(2)" style="flex:1;padding:12px 0;font-size:15px;font-weight:700;border-radius:8px;border:1.5px solid var(--color-border-secondary);background:var(--color-background-primary);cursor:pointer;">2</button>
+                <button id="itd3" onclick="selectItadaki(3)" style="flex:1;padding:12px 0;font-size:15px;font-weight:700;border-radius:8px;border:1.5px solid var(--color-border-secondary);background:var(--color-background-primary);cursor:pointer;">3</button>
+              </div>
+              <p style="font-size:11px;color:var(--color-text-tertiary);margin:6px 0 0;text-align:center;">山札残り15枚まで選択可</p>
+            </div>
+            <button id="itd-confirm" disabled style="width:100%;padding:10px;font-size:13px;font-weight:600;opacity:0.35;">捨てる</button>
+            <button onclick="document.getElementById('ga1-itadaki').style.display='none';document.getElementById('ga1-normal').style.display='flex';" style="width:100%;padding:8px;font-size:12px;color:var(--color-text-secondary);">キャンセル</button>
+          </div>
+
+          <button onclick="document.getElementById('ga1-normal').style.display='none';document.getElementById('ga1-itadaki').style.display='flex';" style="font-size:11px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;text-decoration:underline;text-align:center;">↑ いただきます。を引いた場合はこちら（確認用）</button>
+        </div>
+
+        <!-- アクション③ 待機中 -->
+        <div id="ga2" style="display:none;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:0;border:0.5px solid var(--color-border-secondary);border-radius:7px;overflow:hidden;">
+            <button id="gst0" class="subtab active" onclick="gSetSubWait(0)">通常待機</button>
+            <button id="gst1" class="subtab" onclick="gSetSubWait(1)">好み回答（他→自）</button>
+            <button id="gst2" class="subtab" onclick="gSetSubWait(2)">好み回答（自→自）</button>
+          </div>
+          <!-- 通常待機 -->
+          <div id="gsw0" style="display:flex;flex-direction:column;gap:5px;">
+            <div style="background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+              <div><p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 3px;">たろうさんの手番中</p><p id="g-live" onclick="gCycleLive()" style="font-size:12px;margin:0;cursor:pointer;">山札からカードを引いています…</p></div>
+              <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;"><i class="ti ti-clock" style="font-size:13px;color:var(--color-text-secondary);"></i><span style="font-size:16px;font-weight:600;">2:45</span></div>
+            </div>
+          </div>
+          <!-- 好み回答（他→自） -->
+          <div id="gsw1" style="display:none;flex-direction:column;gap:6px;">
+            <div style="background:#FFF8E6;border:0.5px solid #F0C040;border-radius:8px;padding:10px 12px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><i class="ti ti-bell-ringing" style="font-size:15px;color:#B07800;flex-shrink:0;"></i><p style="font-size:12px;font-weight:600;color:#7A5200;margin:0;">たろうさんから質問が来ました</p></div>
+              <p style="font-size:14px;font-weight:600;margin:0 0 10px;text-align:center;">🍎 リンゴは好きですか？</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <button style="padding:10px;font-size:13px;font-weight:600;opacity:0.3;" disabled>はい（Yes）</button>
+                <button style="padding:10px;font-size:13px;font-weight:600;">いいえ（No）</button>
+              </div>
+              <p style="font-size:11px;color:var(--color-text-tertiary);margin:6px 0 0;text-align:center;">役職の性質上、回答が固定されています</p>
+            </div>
+            <p style="font-size:11px;color:var(--color-text-tertiary);text-align:center;margin:0;">1分間回答がない場合、役職に基づき <strong>「いいえ」</strong> が自動送信されます</p>
+            <p style="font-size:10px;color:var(--color-text-tertiary);text-align:center;margin:0;">※ネイビーの場合はランダムな回答が自動送信されます</p>
+          </div>
+          <!-- 好み回答（自→自） -->
+          <div id="gsw2" style="display:none;flex-direction:column;gap:6px;">
+            <div style="background:#FFF8E6;border:0.5px solid #F0C040;border-radius:8px;padding:10px 12px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><i class="ti ti-bell-ringing" style="font-size:15px;color:#B07800;flex-shrink:0;"></i><p style="font-size:12px;font-weight:600;color:#7A5200;margin:0;">自分自身への質問カードを使用しました</p></div>
+              <p style="font-size:14px;font-weight:600;margin:0 0 10px;text-align:center;">🍄 きのこは好きですか？</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <button style="padding:10px;font-size:13px;font-weight:600;">はい（Yes）</button>
+                <button style="padding:10px;font-size:13px;font-weight:600;opacity:0.3;" disabled>いいえ（No）</button>
+              </div>
+              <p style="font-size:11px;color:var(--color-text-tertiary);margin:6px 0 0;text-align:center;">役職の性質上、回答が固定されています</p>
+            </div>
+            <p style="font-size:11px;color:var(--color-text-tertiary);text-align:center;margin:0;">1分間回答がない場合、役職に基づき <strong>「はい」</strong> が自動送信されます</p>
+            <p style="font-size:10px;color:var(--color-text-tertiary);text-align:center;margin:0;">※ネイビーの場合はランダムな回答が自動送信されます</p>
+          </div>
+        </div>
+
+        <!-- アクション④ 選択画面 -->
+        <div id="ga3" style="display:none;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:0;border:0.5px solid var(--color-border-secondary);border-radius:7px;overflow:hidden;margin-bottom:2px;">
+            <button id="gss0" class="subtab active" onclick="gSetSubSel(0)">② プレイヤー選択（1名）</button>
+            <button id="gss1" class="subtab" onclick="gSetSubSel(1)">ルーレット方向選択</button>
+            <button id="gss2" class="subtab" onclick="gSetSubSel(2)">⑤ ライト（2名選択）</button>
+          </div>
+          <!-- プレイヤー選択 -->
+          <div id="gsc0" style="display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+              <button onclick="setGameView(0)" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;color:var(--color-text-secondary);"><i class="ti ti-arrow-left" style="font-size:14px;"></i></button>
+              <p style="font-size:12px;font-weight:600;margin:0;flex:1;">② 手札の交換 — 相手を選択</p>
+            </div>
+            <div class="sel-card" onclick="gSelectPlayer(this)">
+              <div class="av" style="background:var(--color-background-info);color:var(--color-text-info);">た</div>
+              <div style="flex:1;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:600;">たろう</span><div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-flex;align-items:center;gap:2px;opacity:0.5;"><i class="ti ti-apple" style="font-size:11px;color:var(--color-text-tertiary);"></i><i class="ti ti-lock" style="font-size:9px;"></i></span><div style="display:flex;gap:3px;"><span class="pref">り<i class="ti ti-lock lk"></i></span><span class="pref">き<i class="ti ti-lock lk"></i></span></div></div></div>
+              <i class="ti ti-circle" style="font-size:18px;color:var(--color-border-secondary);flex-shrink:0;"></i>
+            </div>
+            <div class="sel-card" onclick="gSelectPlayer(this)">
+              <div class="av" style="background:#EEEDFE;color:#26215C;">み</div>
+              <div style="flex:1;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:600;">みき</span><div style="display:flex;align-items:center;gap:6px;"><div style="display:flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:11px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></div><div style="display:flex;gap:3px;"><span style="font-size:10px;color:var(--color-text-success);">り○</span><span class="pref">き<i class="ti ti-lock lk"></i></span></div></div></div>
+              <i class="ti ti-circle" style="font-size:18px;color:var(--color-border-secondary);flex-shrink:0;"></i>
+            </div>
+            <div class="sel-card disabled">
+              <div class="av" style="background:#FAEEDA;color:#412402;">は</div>
+              <div style="flex:1;display:flex;align-items:center;justify-content:space-between;"><div style="display:flex;align-items:center;gap:5px;"><span style="font-size:13px;font-weight:600;color:var(--color-text-tertiary);">はなこ</span><span style="font-size:10px;padding:1px 7px;border-radius:20px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">トレード不可</span></div><div style="display:flex;gap:4px;"><span style="font-size:10px;color:var(--color-text-success);">り○</span><span style="font-size:10px;color:var(--color-text-danger);">き×</span></div></div>
+              <i class="ti ti-shield" style="font-size:16px;color:#5DCAA5;flex-shrink:0;"></i>
+            </div>
+            <div class="sel-card disabled">
+              <div class="av" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-tertiary);">け</div>
+              <div style="flex:1;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:600;color:var(--color-text-tertiary);">けんじ</span><span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-tertiary);border:0.5px solid var(--color-border-tertiary);">死亡</span></div>
+              <i class="ti ti-ban" style="font-size:16px;color:var(--color-text-tertiary);flex-shrink:0;"></i>
+            </div>
+            <button id="g-confirm-btn" disabled style="width:100%;padding:10px;font-size:13px;font-weight:600;margin-top:2px;opacity:0.35;">交換する</button>
+          </div>
+          <!-- ルーレット方向選択 -->
+          <div id="gsc1" style="display:none;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;"><button onclick="setGameView(0)" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;color:var(--color-text-secondary);"><i class="ti ti-arrow-left" style="font-size:14px;"></i></button><p style="font-size:12px;font-weight:600;margin:0;flex:1;">アップルルーレット — 方向を選択</p></div>
+            <p style="font-size:12px;color:var(--color-text-secondary);margin:0;text-align:center;">全員のリンゴが移動します。どちらに回しますか？</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <button id="gdir0" onclick="gSelectDir(0)" style="padding:16px 8px;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:8px;border:0.5px solid var(--color-border-secondary);border-radius:10px;background:var(--color-background-secondary);cursor:pointer;"><i class="ti ti-rotate-clockwise" style="font-size:28px;color:var(--color-text-secondary);"></i><span>時計回り</span></button>
+              <button id="gdir1" onclick="gSelectDir(1)" style="padding:16px 8px;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:8px;border:0.5px solid var(--color-border-secondary);border-radius:10px;background:var(--color-background-secondary);cursor:pointer;"><i class="ti ti-rotate-2" style="font-size:28px;color:var(--color-text-secondary);"></i><span>反時計回り</span></button>
+            </div>
+            <button id="g-roulette-btn" disabled style="width:100%;padding:10px;font-size:13px;font-weight:600;opacity:0.35;">ルーレットを回す</button>
+          </div>
+          <!-- ライト能力：2名選択（チェックボックス式） -->
+          <div id="gsc2" style="display:none;flex-direction:column;gap:5px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+              <button onclick="setGameView(0)" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;color:var(--color-text-secondary);"><i class="ti ti-arrow-left" style="font-size:14px;"></i></button>
+              <p style="font-size:12px;font-weight:600;margin:0;flex:1;">⑤ ライト能力 — 2名を選択</p>
+            </div>
+            <p style="font-size:11px;color:var(--color-text-secondary);margin:0;">リンゴを交換させる2名を選んでください</p>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+
+              <!-- たろう（選択可） -->
+              <div class="sel-card" onclick="lightSelect(this)" style="position:relative;">
+                <div id="lc-ta" style="width:18px;height:18px;border-radius:4px;border:1.5px solid var(--color-border-secondary);background:var(--color-background-primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;"></div>
+                <div class="av" style="background:var(--color-background-info);color:var(--color-text-info);">た</div>
+                <div style="flex:1;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-size:13px;font-weight:600;">たろう</span>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="display:inline-flex;align-items:center;gap:2px;opacity:0.5;"><i class="ti ti-apple" style="font-size:11px;color:var(--color-text-tertiary);"></i><i class="ti ti-lock" style="font-size:9px;"></i></span>
+                    <div style="display:flex;gap:3px;"><span class="pref">り<i class="ti ti-lock lk"></i></span><span class="pref">き<i class="ti ti-lock lk"></i></span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- みき（選択可） -->
+              <div class="sel-card" onclick="lightSelect(this)" style="position:relative;">
+                <div id="lc-mi" style="width:18px;height:18px;border-radius:4px;border:1.5px solid var(--color-border-secondary);background:var(--color-background-primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;"></div>
+                <div class="av" style="background:#EEEDFE;color:#26215C;">み</div>
+                <div style="flex:1;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-size:13px;font-weight:600;">みき</span>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <div style="display:flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:11px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></div>
+                    <div style="display:flex;gap:3px;"><span style="font-size:10px;color:var(--color-text-success);">り○</span><span class="pref">き<i class="ti ti-lock lk"></i></span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- はなこ（グレイ保護中 → トレード不可） -->
+              <div class="sel-card disabled">
+                <div style="width:18px;height:18px;border-radius:4px;border:1.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);flex-shrink:0;opacity:0.4;"></div>
+                <div class="av" style="background:#FAEEDA;color:#412402;">は</div>
+                <div style="flex:1;display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:5px;">
+                    <span style="font-size:13px;font-weight:600;color:var(--color-text-tertiary);">はなこ</span>
+                    <span style="font-size:10px;padding:1px 7px;border-radius:20px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">トレード不可</span>
+                  </div>
+                  <div style="display:flex;gap:4px;"><span style="font-size:10px;color:var(--color-text-success);">り○</span><span style="font-size:10px;color:var(--color-text-danger);">き×</span></div>
+                </div>
+                <i class="ti ti-shield" style="font-size:16px;color:#5DCAA5;flex-shrink:0;"></i>
+              </div>
+
+              <!-- けんじ（死亡） -->
+              <div class="sel-card disabled">
+                <div style="width:18px;height:18px;border-radius:4px;border:1.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);flex-shrink:0;opacity:0.4;"></div>
+                <div class="av" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-tertiary);">け</div>
+                <div style="flex:1;display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-size:13px;font-weight:600;color:var(--color-text-tertiary);">けんじ</span>
+                  <span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-tertiary);border:0.5px solid var(--color-border-tertiary);">死亡</span>
+                </div>
+                <i class="ti ti-ban" style="font-size:16px;color:var(--color-text-tertiary);flex-shrink:0;"></i>
+              </div>
+
+            </div>
+            <p id="light-count-msg" style="font-size:11px;color:var(--color-text-tertiary);text-align:center;margin:0;">あと2名選んでください</p>
+            <button id="light-confirm-btn" disabled style="width:100%;padding:10px;font-size:13px;font-weight:600;opacity:0.35;">このふたりのリンゴを交換する</button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+      <!-- 捨て山モーダル -->
+      <div id="discard-modal" onclick="if(event.target===this)gCloseDiscard()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.45);border-radius:16px;z-index:20;align-items:flex-end;">
+        <div style="background:var(--color-background-primary);border-radius:16px 16px 0 0;width:100%;max-height:75%;display:flex;flex-direction:column;">
+          <div style="padding:12px 16px 10px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+            <span style="font-size:14px;font-weight:600;">捨て山（8枚）</span>
+            <button onclick="gCloseDiscard()" style="background:none;border:none;cursor:pointer;padding:0;color:var(--color-text-tertiary);font-size:18px;line-height:1;">×</button>
+          </div>
+          <div class="no-scroll" style="flex:1;padding:8px 16px 16px;overflow-y:auto;">
+            <p style="font-size:11px;color:var(--color-text-tertiary);margin:0 0 8px;">古い順（上）→ 新しい順（下）</p>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:var(--color-text-tertiary);min-width:16px;">1</span><span style="font-size:12px;font-weight:500;">リンゴは好き？</span></div>
+                <span style="font-size:10px;color:var(--color-text-tertiary);">さくら</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:var(--color-text-tertiary);min-width:16px;">2</span><span style="font-size:12px;font-weight:500;">包丁</span></div>
+                <span style="font-size:10px;color:var(--color-text-tertiary);">たろう</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:var(--color-text-tertiary);min-width:16px;">3</span><span style="font-size:12px;font-weight:500;">きのこは好き？</span></div>
+                <span style="font-size:10px;color:var(--color-text-tertiary);">みき</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:var(--color-text-tertiary);min-width:16px;">4</span><span style="font-size:12px;font-weight:500;">いただきます。</span></div>
+                <span style="font-size:10px;color:var(--color-text-tertiary);">はなこ</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:var(--color-text-tertiary);min-width:16px;">5</span><span style="font-size:12px;font-weight:500;">リンゴは好き？</span></div>
+                <span style="font-size:10px;color:var(--color-text-tertiary);">さくら</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:var(--color-text-tertiary);min-width:16px;">6</span><span style="font-size:12px;font-weight:500;">アップルルーレット！</span></div>
+                <span style="font-size:10px;color:var(--color-text-tertiary);">たろう</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:var(--color-text-tertiary);min-width:16px;">7</span><span style="font-size:12px;font-weight:500;">ロープ</span></div>
+                <span style="font-size:10px;color:var(--color-text-tertiary);">みき</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border:1.5px solid #1D9E75;">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#1D9E75;min-width:16px;">8</span><span style="font-size:12px;font-weight:500;">ロープ</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">最新</span></div>
+                <span style="font-size:10px;color:var(--color-text-tertiary);">はなこ</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 行動ログ全画面 -->
+      <div id="g-log-screen" style="position:absolute;top:0;left:0;right:0;bottom:0;background:var(--color-background-primary);border-radius:16px;z-index:10;overflow:hidden;flex-direction:column;display:none;">
+        <div style="padding:11px 12px 10px;border-bottom:0.5px solid var(--color-border-tertiary);flex-shrink:0;display:flex;align-items:center;gap:8px;">
+          <button onclick="gHideLog()" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;gap:3px;color:var(--color-text-secondary);font-size:13px;"><i class="ti ti-arrow-left" style="font-size:14px;"></i>ゲームに戻る</button>
+          <span style="font-size:14px;font-weight:600;flex:1;text-align:center;margin-right:70px;">行動ログ</span>
+        </div>
+        <div class="no-scroll" style="flex:1;padding:4px 12px 12px;overflow-y:auto;">
+          <div class="log-row"><span class="log-who">はなこ</span><span>「ロープ」をたろうに使用 → 次の手番をスキップ</span></div>
+          <div class="log-row"><span class="log-who">さくら</span><span>④自分のリンゴを確認</span></div>
+          <div class="log-row"><span class="log-who">みき</span><span>③リンゴの交換 → さくらとリンゴを交換</span></div>
+          <div class="log-row"><span class="log-who">けんじ</span><span>「リンゴは好き？」をはなこに使用 → はなこ：好き</span></div>
+          <div class="log-row"><span class="log-who">たろう</span><span>「アップルルーレット！」→ 時計回りに1つ移動</span></div>
+          <div class="log-row"><span class="log-who">さくら</span><span>「包丁」をたろうに使用 → リンゴ公開（通常）</span></div>
+          <div class="log-row"><span class="log-who">けんじ</span><span>💀 毒の櫛により死亡</span></div>
+          <div class="log-row"><span class="log-who">みき</span><span>🛡️ 毒の櫛が騎士により無効化された</span></div>
+        </div>
+      </div>
+
+  </div>
+</div>
+
+<!-- ==============================
+  画面6：エンディング画面
+============================== -->
+<div class="screen-wrap" id="sc5">
+  <div class="screen-label">⑥ エンディング画面</div>
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px;width:300px;">
+    <button id="ev0" onclick="setEndView(0)" style="flex:1;padding:5px 0;font-size:10px;border:1px solid #2e2e4a;border-radius:7px;cursor:pointer;background:#16162a;font-weight:500;color:#fff;white-space:nowrap;">女王リンゴ公開</button>
+    <button id="ev1" onclick="setEndView(1)" style="flex:1;padding:5px 0;font-size:10px;border:1px solid #2e2e4a;border-radius:7px;cursor:pointer;background:none;color:#9ca3af;white-space:nowrap;">女王交換選択</button>
+    <button id="ev2" onclick="setEndView(2)" style="flex:1;padding:5px 0;font-size:10px;border:1px solid #2e2e4a;border-radius:7px;cursor:pointer;background:none;color:#9ca3af;white-space:nowrap;">全員公開</button>
+    <button id="ev3" onclick="setEndView(3)" style="flex:1;padding:5px 0;font-size:10px;border:1px solid #2e2e4a;border-radius:7px;cursor:pointer;background:none;color:#9ca3af;white-space:nowrap;">女王死亡済み</button>
+    <button id="ev4" onclick="setEndView(4)" style="flex:1;padding:5px 0;font-size:10px;border:1px solid #2e2e4a;border-radius:7px;cursor:pointer;background:none;color:#9ca3af;white-space:nowrap;">通常リンゴ</button>
+  </div>
+  <div class="phone-frame">
+    <div class="phone-status"><span>9:41</span><div style="display:flex;gap:5px;"><i class="ti ti-wifi" style="font-size:13px;color:var(--color-text-secondary);"></i><i class="ti ti-battery" style="font-size:13px;color:var(--color-text-secondary);"></i></div></div>
+    <div style="background:var(--color-background-primary);border-radius:16px;display:flex;flex-direction:column;">
+
+      <!-- フェイズバー -->
+      <div style="padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span style="background:#FAEEDA;color:#412402;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:500;">エンディングフェイズ</span>
+        </div>
+        <span style="font-size:11px;color:var(--color-text-tertiary);">ゲーム終了</span>
+      </div>
+
+      <!-- パターン①：女王のリンゴ公開（サブタブで3状態を切り替え） -->
+      <div id="ea0" style="display:flex;flex-direction:column;padding:12px;gap:8px;">
+
+        <div style="display:flex;gap:0;border:0.5px solid var(--color-border-secondary);border-radius:7px;overflow:hidden;">
+          <button id="est0" class="subtab active" onclick="setEndSub(0)">交換待ち</button>
+          <button id="est1" class="subtab" onclick="setEndSub(1)">交換成立後</button>
+          <button id="est2" class="subtab" onclick="setEndSub(2)">ガードで防御</button>
+        </div>
+
+        <!-- 交換待ち -->
+        <div id="esw0" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#FAEEDA;border:0.5px solid #BA7517;border-radius:10px;padding:12px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <div class="av" style="background:#FAEEDA;color:#412402;border:0.5px solid #BA7517;">女</div>
+              <div><p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 1px;">女王のリンゴが公開されました</p><p style="font-size:13px;font-weight:600;margin:0;">さくら（女王）</p></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(226,75,74,0.08);border-radius:8px;border:0.5px solid #E24B4A;">
+              <span style="font-size:28px;">🍎</span>
+              <div><p style="font-size:13px;font-weight:700;color:#E24B4A;margin:0;">毒リンゴ</p><p style="font-size:11px;color:var(--color-text-secondary);margin:0;">女王の特権が発動します</p></div>
+            </div>
+          </div>
+          <div style="background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;text-align:center;">
+            <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:5px;"><i class="ti ti-dots" style="font-size:15px;color:var(--color-text-tertiary);"></i><p style="font-size:12px;color:var(--color-text-secondary);margin:0;">女王が交換相手を選んでいます</p></div>
+            <p style="font-size:11px;color:var(--color-text-tertiary);margin:0;">3分以内に選択されます</p>
+          </div>
+        </div>
+
+        <!-- 交換成立後 -->
+        <div id="esw1" style="display:none;flex-direction:column;gap:8px;">
+          <div style="background:#FAEEDA;border:0.5px solid #BA7517;border-radius:10px;padding:12px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <div class="av" style="background:#FAEEDA;color:#412402;border:0.5px solid #BA7517;">女</div>
+              <div><p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 1px;">女王のリンゴが公開されました</p><p style="font-size:13px;font-weight:600;margin:0;">さくら（女王）</p></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(226,75,74,0.08);border-radius:8px;border:0.5px solid #E24B4A;">
+              <span style="font-size:28px;">🍎</span>
+              <div><p style="font-size:13px;font-weight:700;color:#E24B4A;margin:0;">毒リンゴ</p></div>
+            </div>
+          </div>
+          <!-- 交換の矢印表示 -->
+          <div style="background:var(--color-background-secondary);border-radius:10px;padding:12px;">
+            <p style="font-size:11px;font-weight:600;color:var(--color-text-secondary);margin:0 0 10px;text-align:center;">リンゴの交換が成立しました</p>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+              <div style="text-align:center;">
+                <div class="av" style="background:#FAEEDA;color:#412402;border:0.5px solid #BA7517;margin:0 auto 4px;">女</div>
+                <p style="font-size:11px;font-weight:600;margin:0;">さくら</p>
+                <p style="font-size:10px;color:#E24B4A;margin:0;">🍎毒→通常</p>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                <i class="ti ti-arrows-exchange" style="font-size:22px;color:var(--color-text-secondary);"></i>
+                <span style="font-size:9px;color:var(--color-text-tertiary);">交換</span>
+              </div>
+              <div style="text-align:center;">
+                <div class="av" style="background:var(--color-background-info);color:var(--color-text-info);margin:0 auto 4px;">た</div>
+                <p style="font-size:11px;font-weight:600;margin:0;">たろう</p>
+                <p style="font-size:10px;color:#1D9E75;margin:0;">🍎通常→毒</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ガードで防御 -->
+        <div id="esw2" style="display:none;flex-direction:column;gap:8px;">
+          <div style="background:#FAEEDA;border:0.5px solid #BA7517;border-radius:10px;padding:12px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <div class="av" style="background:#FAEEDA;color:#412402;border:0.5px solid #BA7517;">女</div>
+              <div><p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 1px;">女王のリンゴが公開されました</p><p style="font-size:13px;font-weight:600;margin:0;">さくら（女王）</p></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(226,75,74,0.08);border-radius:8px;border:0.5px solid #E24B4A;">
+              <span style="font-size:28px;">🍎</span>
+              <div><p style="font-size:13px;font-weight:700;color:#E24B4A;margin:0;">毒リンゴ</p></div>
+            </div>
+          </div>
+          <!-- ガード発動通知 -->
+          <div style="background:#E1F5EE;border:0.5px solid #5DCAA5;border-radius:10px;padding:12px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <i class="ti ti-shield" style="font-size:18px;color:#1D9E75;flex-shrink:0;"></i>
+              <p style="font-size:13px;font-weight:600;color:#085041;margin:0;">ガードが発動しました</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="av" style="background:#EEEDFE;color:#26215C;">み</div>
+              <div>
+                <p style="font-size:12px;font-weight:600;margin:0;">みき</p>
+                <p style="font-size:11px;color:var(--color-text-secondary);margin:0;">ガードカードによりリンゴ交換を拒否しました</p>
+              </div>
+            </div>
+            <p style="font-size:11px;color:var(--color-text-secondary);margin:8px 0 0;">交換は不成立。女王は再指定できません。</p>
+          </div>
+        </div>
+
+        <!-- 自分情報バー -->
+        <div style="background:var(--color-background-secondary);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:10px;color:var(--color-text-secondary);">役職</span><span style="font-size:11px;font-weight:600;padding:2px 8px;background:#E1F5EE;border-radius:20px;color:#085041;border:0.5px solid #5DCAA5;">グリーン</span></div>
+          <div style="width:1px;height:14px;background:var(--color-border-tertiary);"></div>
+          <div style="display:flex;align-items:center;gap:3px;"><i class="ti ti-apple" style="font-size:12px;color:#1D9E75;"></i><span style="font-size:11px;">通常リンゴ</span></div>
+          <div style="width:1px;height:14px;background:var(--color-border-tertiary);"></div>
+          <div style="display:flex;align-items:center;gap:3px;"><span style="font-size:10px;color:var(--color-text-secondary);">手札</span><span style="font-size:11px;padding:2px 7px;border:0.5px solid var(--color-border-secondary);border-radius:4px;background:var(--color-background-primary);">ロープ</span></div>
+        </div>
+      </div>
+
+      <!-- パターン②：女王が交換先を選択（女王視点） -->
+      <div id="ea1" style="display:none;flex-direction:column;padding:12px;gap:8px;">
+        <div style="background:#FAEEDA;border:0.5px solid #BA7517;border-radius:10px;padding:10px 12px;">
+          <p style="font-size:12px;font-weight:600;color:#7A5200;margin:0 0 4px;">🍎 あなたは毒リンゴを持っています</p>
+          <p style="font-size:11px;color:var(--color-text-secondary);margin:0;">リンゴを交換する相手を1人選んでください</p>
+        </div>
+        <p style="font-size:12px;font-weight:600;margin:0 0 2px;">交換相手を選択</p>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+
+          <!-- たろう（選択可・好み未回答） -->
+          <div class="sel-card" onclick="endSelectPlayer(this)">
+            <div class="av" style="background:var(--color-background-info);color:var(--color-text-info);">た</div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;font-weight:600;">たろう</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="display:inline-flex;align-items:center;gap:2px;opacity:0.5;"><i class="ti ti-apple" style="font-size:11px;color:var(--color-text-tertiary);"></i><i class="ti ti-lock" style="font-size:9px;"></i></span>
+                <div style="display:flex;gap:3px;"><span class="pref">り<i class="ti ti-lock lk"></i></span><span class="pref">き<i class="ti ti-lock lk"></i></span></div>
+              </div>
+            </div>
+            <i class="ti ti-circle" style="font-size:18px;color:var(--color-border-secondary);flex-shrink:0;"></i>
+          </div>
+
+          <!-- みき（選択可・好み一部回答済み） -->
+          <div class="sel-card" onclick="endSelectPlayer(this)">
+            <div class="av" style="background:#EEEDFE;color:#26215C;">み</div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;font-weight:600;">みき</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="display:flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:11px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></div>
+                <div style="display:flex;gap:3px;"><span style="font-size:10px;color:var(--color-text-success);">り○</span><span class="pref">き<i class="ti ti-lock lk"></i></span></div>
+              </div>
+            </div>
+            <i class="ti ti-circle" style="font-size:18px;color:var(--color-border-secondary);flex-shrink:0;"></i>
+          </div>
+
+          <!-- はなこ（グレイ保護中 → トレード不可） -->
+          <div class="sel-card disabled">
+            <div class="av" style="background:#FAEEDA;color:#412402;">は</div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:5px;">
+                <span style="font-size:13px;font-weight:600;color:var(--color-text-tertiary);">はなこ</span>
+                <span style="font-size:10px;padding:1px 7px;border-radius:20px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">トレード不可</span>
+              </div>
+              <div style="display:flex;gap:4px;"><span style="font-size:10px;color:var(--color-text-success);">り○</span><span style="font-size:10px;color:var(--color-text-danger);">き×</span></div>
+            </div>
+            <i class="ti ti-shield" style="font-size:16px;color:#5DCAA5;flex-shrink:0;"></i>
+          </div>
+
+          <!-- けんじ（死亡） -->
+          <div class="sel-card disabled">
+            <div class="av" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-tertiary);">け</div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;font-weight:600;color:var(--color-text-tertiary);">けんじ</span>
+              <span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-tertiary);border:0.5px solid var(--color-border-tertiary);">死亡</span>
+            </div>
+            <i class="ti ti-ban" style="font-size:16px;color:var(--color-text-tertiary);flex-shrink:0;"></i>
+          </div>
+        </div>
+        <button id="end-confirm-btn" disabled style="width:100%;padding:10px;font-size:13px;font-weight:600;opacity:0.35;">この相手と交換する</button>
+        <p style="font-size:10px;color:var(--color-text-tertiary);text-align:center;margin:0;">3分以内に選択してください。時間切れの場合はランダム選択されます</p>
+      </div>
+
+      <!-- パターン③：全員リンゴ公開（ENDING_REVEAL） -->
+      <div id="ea2" style="display:none;flex-direction:column;padding:12px;gap:8px;">
+        <p style="font-size:12px;font-weight:600;color:var(--color-text-secondary);margin:0;text-align:center;">全員のリンゴが公開されています</p>
+
+        <!-- リンゴ公開ログ（順番に表示） -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border-left:3px solid #1D9E75;">
+            <div class="av" style="background:#E1F5EE;color:#085041;">さ</div>
+            <div style="flex:1;"><p style="font-size:12px;font-weight:600;margin:0;">さくら</p></div>
+            <div style="display:flex;align-items:center;gap:4px;"><i class="ti ti-apple" style="font-size:14px;color:#1D9E75;"></i><span style="font-size:12px;font-weight:600;color:#1D9E75;">通常リンゴ</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border-left:3px solid #1D9E75;">
+            <div class="av" style="background:var(--color-background-info);color:var(--color-text-info);">た</div>
+            <div style="flex:1;"><p style="font-size:12px;font-weight:600;margin:0;">たろう</p></div>
+            <div style="display:flex;align-items:center;gap:4px;"><i class="ti ti-apple" style="font-size:14px;color:#1D9E75;"></i><span style="font-size:12px;font-weight:600;color:#1D9E75;">通常リンゴ</span></div>
+          </div>
+          <!-- 毒リンゴ → 死亡 -->
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(226,75,74,0.06);border-radius:8px;border-left:3px solid #E24B4A;">
+            <div class="av" style="background:#EEEDFE;color:#26215C;">み</div>
+            <div style="flex:1;"><p style="font-size:12px;font-weight:600;margin:0;">みき</p><p style="font-size:10px;color:var(--color-text-danger);margin:0;">💀 毒リンゴにより死亡</p></div>
+            <div style="display:flex;align-items:center;gap:4px;"><i class="ti ti-apple" style="font-size:14px;color:#E24B4A;"></i><span style="font-size:12px;font-weight:600;color:#E24B4A;">毒リンゴ</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--color-background-secondary);border-radius:8px;border-left:3px solid #1D9E75;">
+            <div class="av" style="background:#FAEEDA;color:#412402;">は</div>
+            <div style="flex:1;"><p style="font-size:12px;font-weight:600;margin:0;">はなこ</p></div>
+            <div style="display:flex;align-items:center;gap:4px;"><i class="ti ti-apple" style="font-size:14px;color:#1D9E75;"></i><span style="font-size:12px;font-weight:600;color:#1D9E75;">通常リンゴ</span></div>
+          </div>
+        </div>
+
+        <!-- 遷移中 -->
+        <div style="background:var(--color-background-secondary);border-radius:8px;padding:10px;text-align:center;">
+          <p style="font-size:12px;color:var(--color-text-secondary);margin:0;">勝敗を判定しています…</p>
+        </div>
+      </div>
+
+      <!-- パターンA：女王が死亡済み（ENDING_QUEENを即スキップ） -->
+      <div id="ea3" style="display:none;flex-direction:column;padding:12px;gap:8px;">
+        <div style="background:var(--color-background-secondary);border-radius:10px;padding:14px 12px;text-align:center;border:0.5px solid var(--color-border-secondary);">
+          <div style="font-size:28px;margin-bottom:8px;">💀</div>
+          <p style="font-size:13px;font-weight:600;margin:0 0 4px;">女王はすでに死亡しています</p>
+          <p style="font-size:11px;color:var(--color-text-secondary);margin:0;">女王の特権フェイズはスキップされます</p>
+        </div>
+        <div style="background:#FAEEDA;border:0.5px solid #BA7517;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;opacity:0.55;">
+          <div class="av" style="background:#FAEEDA;color:#412402;border:0.5px solid #BA7517;flex-shrink:0;">女</div>
+          <div>
+            <p style="font-size:12px;font-weight:600;margin:0;">さくら（女王）</p>
+            <p style="font-size:11px;color:var(--color-text-secondary);margin:0;">💀 最後の手番フェイズ中に死亡</p>
+          </div>
+        </div>
+        <div style="background:#E1F5EE;border:0.5px solid #5DCAA5;border-radius:8px;padding:10px 12px;">
+          <p style="font-size:12px;color:#085041;margin:0;display:flex;align-items:center;gap:6px;"><i class="ti ti-arrow-right" style="font-size:14px;"></i>全員のリンゴを公開フェイズへ移行します</p>
+        </div>
+        <div style="background:var(--color-background-secondary);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:10px;color:var(--color-text-secondary);">役職</span><span style="font-size:11px;font-weight:600;padding:2px 8px;background:#E1F5EE;border-radius:20px;color:#085041;border:0.5px solid #5DCAA5;">グリーン</span></div>
+          <div style="width:1px;height:14px;background:var(--color-border-tertiary);"></div>
+          <div style="display:flex;align-items:center;gap:3px;"><i class="ti ti-apple" style="font-size:12px;color:#1D9E75;"></i><span style="font-size:11px;">通常リンゴ</span></div>
+        </div>
+      </div>
+
+      <!-- パターンB：女王のリンゴが通常リンゴ -->
+      <div id="ea4" style="display:none;flex-direction:column;padding:12px;gap:8px;">
+        <div style="background:#E1F5EE;border:0.5px solid #5DCAA5;border-radius:10px;padding:12px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <div class="av" style="background:#FAEEDA;color:#412402;border:0.5px solid #BA7517;">女</div>
+            <div><p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 1px;">女王のリンゴが公開されました</p><p style="font-size:13px;font-weight:600;margin:0;">さくら（女王）</p></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(29,158,117,0.08);border-radius:8px;border:0.5px solid #5DCAA5;">
+            <span style="font-size:28px;">🍎</span>
+            <div>
+              <p style="font-size:13px;font-weight:700;color:#1D9E75;margin:0;">通常リンゴ</p>
+              <p style="font-size:11px;color:var(--color-text-secondary);margin:0;">女王の特権は発動しません</p>
+            </div>
+          </div>
+        </div>
+        <div style="background:#E1F5EE;border:0.5px solid #5DCAA5;border-radius:8px;padding:10px 12px;">
+          <p style="font-size:12px;color:#085041;margin:0;display:flex;align-items:center;gap:6px;"><i class="ti ti-arrow-right" style="font-size:14px;"></i>リンゴ交換なし。全員のリンゴを公開フェイズへ移行します</p>
+        </div>
+        <div style="background:var(--color-background-secondary);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:10px;color:var(--color-text-secondary);">役職</span><span style="font-size:11px;font-weight:600;padding:2px 8px;background:#E1F5EE;border-radius:20px;color:#085041;border:0.5px solid #5DCAA5;">グリーン</span></div>
+          <div style="width:1px;height:14px;background:var(--color-border-tertiary);"></div>
+          <div style="display:flex;align-items:center;gap:3px;"><i class="ti ti-apple" style="font-size:12px;color:#1D9E75;"></i><span style="font-size:11px;">通常リンゴ</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="screen-wrap" id="sc6">
+  <div class="screen-label">⑦ 勝敗画面</div>
+  <div style="display:flex;gap:12px;margin-bottom:4px;align-items:center;flex-wrap:wrap;">
+    <div style="display:flex;gap:0;border:1px solid #2e2e4a;border-radius:8px;overflow:hidden;">
+      <button id="rv0" onclick="setResultView(0)" style="padding:5px 10px;font-size:10px;border:none;cursor:pointer;background:#16162a;font-weight:500;color:#fff;">白雪姫陣営勝利</button>
+      <button id="rv1" onclick="setResultView(1)" style="padding:5px 10px;font-size:10px;border:none;cursor:pointer;background:none;color:#9ca3af;">女王陣営勝利</button>
+      <button id="rv2" onclick="setResultView(2)" style="padding:5px 10px;font-size:10px;border:none;cursor:pointer;background:none;color:#9ca3af;">第三陣営勝利</button>
+      <button id="rv3" onclick="setResultView(3)" style="padding:5px 10px;font-size:10px;border:none;cursor:pointer;background:none;color:#9ca3af;">強制終了</button>
+    </div>
+    <div style="display:flex;gap:0;border:1px solid #2e2e4a;border-radius:8px;overflow:hidden;">
+      <button id="rh0" onclick="setResultHost(0)" style="padding:5px 10px;font-size:10px;border:none;cursor:pointer;background:#16162a;font-weight:500;color:#fff;">ホスト</button>
+      <button id="rh1" onclick="setResultHost(1)" style="padding:5px 10px;font-size:10px;border:none;cursor:pointer;background:none;color:#9ca3af;">ゲスト</button>
+    </div>
+  </div>
+  <div class="phone-frame">
+    <div class="phone-status"><span>9:41</span><div style="display:flex;gap:5px;"><i class="ti ti-wifi" style="font-size:13px;color:var(--color-text-secondary);"></i><i class="ti ti-battery" style="font-size:13px;color:var(--color-text-secondary);"></i></div></div>
+    <div style="background:var(--color-background-primary);border-radius:16px;display:flex;flex-direction:column;max-height:560px;overflow:hidden;">
+
+      <!-- 勝利陣営バナー -->
+      <div id="r-banner" style="padding:20px 16px;text-align:center;background:linear-gradient(135deg,#E1F5EE,#d0f5e8);border-bottom:0.5px solid var(--color-border-tertiary);">
+        <div style="font-size:32px;margin-bottom:6px;">🏆</div>
+        <p id="r-faction-label" style="font-size:11px;font-weight:500;padding:3px 12px;border-radius:20px;display:inline-block;margin-bottom:6px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">白雪姫陣営</p>
+        <p id="r-result-text" style="font-size:20px;font-weight:700;color:#085041;margin:0;">白雪姫陣営の勝利！</p>
+        <p id="r-reason-text" style="font-size:11px;color:var(--color-text-secondary);margin:4px 0 0;">白雪姫が生存し、ロゼが死亡しました</p>
+      </div>
+
+      <!-- プレイヤー一覧（役職公開） -->
+      <div class="no-scroll" style="flex:1;padding:10px 12px;">
+        <p style="font-size:11px;font-weight:600;color:var(--color-text-secondary);margin:0 0 8px;">全員の役職が公開されました</p>
+
+        <!-- 強制終了時の注記 -->
+        <div id="r-players-note" style="display:none;background:#FFF8E6;border:0.5px solid #F0C040;border-radius:8px;padding:9px 12px;margin-bottom:8px;">
+          <p style="font-size:11px;color:#7A5200;margin:0;display:flex;align-items:center;gap:5px;">
+            <i class="ti ti-alert-triangle" style="font-size:13px;"></i>
+            強制終了のため全員の役職・リンゴが公開されました
+          </p>
+        </div>
+
+        <!-- 通常勝敗時のプレイヤーリスト -->
+        <div id="r-players-normal" style="display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);">
+            <div class="av" style="background:#E1F5EE;color:#085041;">さ</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">さくら</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">白雪姫</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-success);">● 生存</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></span></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:#1D9E75;">👑 勝利</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);">
+            <div class="av" style="background:var(--color-background-info);color:var(--color-text-info);">た</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">たろう</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">グリーン</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-success);">● 生存</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></span></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:#1D9E75;">👑 勝利</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);opacity:0.6;">
+            <div class="av" style="background:#EEEDFE;color:#26215C;">み</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">みき</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#EEEDFE;color:#26215C;border:0.5px solid #AFA9EC;">女王</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-danger);">💀 死亡</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#E24B4A;"></i><span style="font-size:10px;color:#E24B4A;">毒リンゴ</span></span></div>
+            </div>
+            <span style="font-size:11px;color:var(--color-text-tertiary);">敗北</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);opacity:0.6;">
+            <div class="av" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-tertiary);">け</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">けんじ</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#EEEDFE;color:#26215C;border:0.5px solid #AFA9EC;">ブラック</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-danger);">💀 死亡</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></span></div>
+            </div>
+            <span style="font-size:11px;color:var(--color-text-tertiary);">敗北</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);opacity:0.6;">
+            <div class="av" style="background:#FAEEDA;color:#412402;">は</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">はなこ</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#FAEEDA;color:#412402;border:0.5px solid #BA7517;">ロゼ</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-danger);">💀 死亡</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></span></div>
+            </div>
+            <span style="font-size:11px;color:var(--color-text-tertiary);">敗北</span>
+          </div>
+        </div>
+
+        <!-- 強制終了時のプレイヤーリスト（全役職・リンゴ公開） -->
+        <div id="r-players-forced" style="display:none;flex-direction:column;gap:5px;">
+          <!-- さくら（白雪姫・切断） -->
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);opacity:0.6;">
+            <div class="av" style="background:#E1F5EE;color:#085041;">さ</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">さくら</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">白雪姫</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-danger);">💀 切断</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></span></div>
+            </div>
+            <span style="font-size:11px;color:var(--color-text-tertiary);">敗北</span>
+          </div>
+          <!-- たろう（グリーン・生存） -->
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);">
+            <div class="av" style="background:var(--color-background-info);color:var(--color-text-info);">た</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">たろう</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;">グリーン</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-success);">● 生存</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></span></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:#1D9E75;">👑 勝利</span>
+          </div>
+          <!-- みき（女王・生存） -->
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);">
+            <div class="av" style="background:#EEEDFE;color:#26215C;">み</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">みき</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#EEEDFE;color:#26215C;border:0.5px solid #AFA9EC;">女王</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-success);">● 生存</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#E24B4A;"></i><span style="font-size:10px;color:#E24B4A;">毒リンゴ</span></span></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:#1D9E75;">👑 勝利</span>
+          </div>
+          <!-- けんじ（ブラック・死亡） -->
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);opacity:0.6;">
+            <div class="av" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-tertiary);">け</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">けんじ</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#EEEDFE;color:#26215C;border:0.5px solid #AFA9EC;">ブラック</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-danger);">💀 死亡</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#E24B4A;"></i><span style="font-size:10px;color:#E24B4A;">毒リンゴ</span></span></div>
+            </div>
+            <span style="font-size:11px;color:var(--color-text-tertiary);">敗北</span>
+          </div>
+          <!-- はなこ（ロゼ・生存） -->
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);">
+            <div class="av" style="background:#FAEEDA;color:#412402;">は</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;"><span style="font-size:12px;font-weight:600;">はなこ</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:#FAEEDA;color:#412402;border:0.5px solid #BA7517;">ロゼ</span></div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:var(--color-text-success);">● 生存</span><span style="display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-apple" style="font-size:10px;color:#1D9E75;"></i><span style="font-size:10px;color:var(--color-text-secondary);">通常</span></span></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:#1D9E75;">👑 勝利</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ボタンエリア -->
+      <div style="padding:8px 12px 12px;border-top:0.5px solid var(--color-border-tertiary);flex-shrink:0;display:flex;flex-direction:column;gap:7px;">
+        <div id="r-host-btns" style="display:flex;flex-direction:column;gap:7px;">
+          <button style="width:100%;padding:11px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="ti ti-refresh" style="font-size:15px;"></i>もう一度遊ぶ</button>
+          <button style="width:100%;padding:8px;font-size:12px;color:var(--color-text-danger);border-color:var(--color-border-danger);display:flex;align-items:center;justify-content:center;gap:5px;"><i class="ti ti-door-exit" style="font-size:14px;"></i>ルームを解散する</button>
+        </div>
+        <div id="r-guest-btns" style="display:none;flex-direction:column;gap:7px;">
+          <div style="padding:10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);text-align:center;">
+            <p style="font-size:12px;color:var(--color-text-secondary);margin:0;">ホストが次のゲームを準備しています</p>
+          </div>
+          <button style="width:100%;padding:8px;font-size:12px;color:var(--color-text-danger);border-color:var(--color-border-danger);display:flex;align-items:center;justify-content:center;gap:5px;"><i class="ti ti-door-exit" style="font-size:14px;"></i>ルームを退出する</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+/* ===== 画面切替 ===== */
+function showScreen(i){
+  document.querySelectorAll('.screen-wrap').forEach((el,j)=>el.classList.toggle('active',j===i));
+  document.querySelectorAll('.nav-item').forEach((el,j)=>el.classList.toggle('active',j===i));
+}
+
+/* ===== 画面1：スタート ===== */
+function s1Update(v){
+  document.getElementById('s1-cc').textContent=v.length+' / 12';
+  const ok=v.trim().length>0;
+  const b1=document.getElementById('s1-btn1'),b2=document.getElementById('s1-btn2');
+  b1.disabled=!ok;b2.disabled=!ok;b1.style.opacity=ok?'1':'0.35';b2.style.opacity=ok?'1':'0.35';
+}
+
+/* ===== 画面2：ルーム作成 ===== */
+const CARDS=[['リンゴは好き？',5,10],['きのこは好き？',5,10],['いただきます。',3,5],['アップルルーレット！',1,3],['アップルルーレット！！',1,3],['アップルルーレット！！！',1,3],['包丁',1,3],['呪いの指輪',1,3],['毒の櫛',1,3],['騎士',1,3],['ガード',1,3],['ロープ',1,3],['プレゼント交換',1,3]];
+let cardCnts=CARDS.map(c=>c[1]);
+function renderCards(){document.getElementById('card-list').innerHTML=CARDS.map((c,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;"><span>${c[0]}</span><div style="display:flex;align-items:center;gap:5px;"><button onclick="adjCard(${i},-1)" style="width:22px;height:22px;border-radius:4px;padding:0;">−</button><span id="cv${i}" style="min-width:20px;text-align:center;font-weight:600;">${cardCnts[i]}</span><button onclick="adjCard(${i},1)" style="width:22px;height:22px;border-radius:4px;padding:0;">+</button></div></div>`).join('');}
+function adjCard(i,d){cardCnts[i]=Math.max(0,Math.min(CARDS[i][2],cardCnts[i]+d));document.getElementById('cv'+i).textContent=cardCnts[i];}
+function resetCards(){cardCnts=CARDS.map(c=>c[1]);renderCards();}
+const ROLE_ON=[1,1,1,1,1,0,0,0,0];
+const ROLE_COLORS=[['#5DCAA5','#E1F5EE','#085041'],['#AFA9EC','#EEEDFE','#26215C'],['#5DCAA5','#E1F5EE','#085041'],['#AFA9EC','#EEEDFE','#26215C'],['#5DCAA5','#E1F5EE','#085041'],['#5DCAA5','#E1F5EE','#085041'],['#5DCAA5','#E1F5EE','#085041'],['#AFA9EC','#EEEDFE','#26215C'],['#EF9F27','#FAEEDA','#412402']];
+function toggleRole(i){
+  const el=document.getElementById('rc'+i);ROLE_ON[i]=ROLE_ON[i]?0:1;
+  if(ROLE_ON[i]){el.style.border='0.5px solid '+ROLE_COLORS[i][0];el.style.background=ROLE_COLORS[i][1];el.style.color=ROLE_COLORS[i][2];el.style.opacity='1';}
+  else{el.style.border='0.5px solid var(--color-border-tertiary)';el.style.background='var(--color-background-secondary)';el.style.color='var(--color-text-tertiary)';el.style.opacity='0.6';}
+  const cnt=ROLE_ON.filter(v=>v).length;
+  document.getElementById('role-count').textContent=cnt+'人分';
+  // 毒リンゴスライダーの最大値を（役職数 − 1）に連動更新
+  const maxPoison=Math.max(1, cnt-1);
+  const slider=document.getElementById('poison-slider');
+  slider.max=maxPoison;
+  if(parseInt(slider.value)>maxPoison){slider.value=maxPoison;document.getElementById('poison-val').textContent=maxPoison+'枚';}
+  document.getElementById('poison-max-label').textContent=maxPoison+'枚';
+}
+renderCards();
+
+/* ===== 画面3：ルーム参加 ===== */
+function codeUpdate(v){const ok=v.trim().length>=6;const b=document.getElementById('join-btn');b.disabled=!ok;b.style.opacity=ok?'1':'0.35';}
+function showCodeErr(msg){const el=document.getElementById('code-err');el.style.display='block';document.getElementById('code-err-msg').innerHTML='<i class="ti ti-alert-circle" style="font-size:13px;"></i>'+msg;}
+
+/* ===== いただきます。枚数選択 ===== */
+let itdSelected=0;
+function selectItadaki(n){
+  itdSelected=n;
+  [1,2,3].forEach(i=>{
+    const btn=document.getElementById('itd'+i);
+    btn.style.borderColor=i===n?'#1D9E75':'var(--color-border-secondary)';
+    btn.style.background=i===n?'#E1F5EE':'var(--color-background-primary)';
+    btn.style.color=i===n?'#085041':'var(--color-text-primary)';
+  });
+  const b=document.getElementById('itd-confirm');b.disabled=false;b.style.opacity='1';
+}
+
+/* ===== 画面4：ルーム待機 ===== */
+function setWaitTab(i){
+  document.getElementById('wa-host').style.display=i===0?'flex':'none';
+  document.getElementById('wa-guest').style.display=i===1?'flex':'none';
+  ['wt0','wt1'].forEach((id,j)=>{const el=document.getElementById(id);el.style.background=j===i?'#16162a':'none';el.style.color=j===i?'#fff':'#9ca3af';el.style.fontWeight=j===i?'500':'400';});
+}
+
+/* ===== 画面5：ゲームメイン ===== */
+const gInfos={
+  'ストーリーフェイズ':'山札がなくなるまで続くフェイズ。各プレイヤーが順番に手番を行い、5つの行動のうち1つを選択します。山札が0になると「最後の手番フェイズ」へ移行します。',
+  'グレイ':'役職：グレイ（白雪姫陣営）\n\n【手番能力】手番に能力を宣言すると、次の自分の手番が来るまでの間、他プレイヤーのリンゴ・手札交換の対象にならない。包丁や毒の櫛は防げない。1ゲームに1回限り。',
+  '自分のリンゴ':'ゲーム開始時に確認済みの自分のリンゴ（非公開情報）。\n\nリンゴの交換やアップルルーレット後は情報が古くなります。行動④で再確認できます。',
+  '好み回答':'「リンゴは好き？」「きのこは好き？」カードへの回答記録。\n\nり○=好き　り×=嫌い\nき○=好き　き×=嫌い\nり🔒=未回答\n\n役職によって好みが決まっているため推理の手がかりになります。',
+  '騎士':'【受動カード】\n\n白雪姫が持っている場合のみ有効。「毒の櫛」の対象に指定されても死亡しない。カードは消費されず手札に残ります。',
+  '呪いの指輪':'【最後の手番フェイズ専用・受動効果】\n\n最後の手番フェイズ中に手番が来た瞬間、即座に死亡します。\n\n⚠️ 使用・廃棄ともに不可。手札の交換・プレゼント交換で他プレイヤーへ渡すことはできます。',
+};
+const gLiveTexts=['山札からカードを引いています…','「包丁」をさくらに使用中…','回答待ち中 (0:38)','💀 けんじが毒の櫛により死亡しました','🛡️ 騎士の力で毒の櫛が無効化されました','✨ みきが「ライト」能力を発動：さくらとたろうのリンゴを交換','📡 はなこが切断されました（1分以内に再接続しなければ死亡扱いになります）','💀 はなこが切断により死亡しました'];
+let gLiveIdx=0;
+function gCycleLive(){gLiveIdx=(gLiveIdx+1)%gLiveTexts.length;document.getElementById('g-live').textContent=gLiveTexts[gLiveIdx];}
+function gShowInfo(k){
+  const p=document.getElementById('g-info-panel');
+  if(p.style.display!=='none'&&document.getElementById('g-info-title').textContent===k){gCloseInfo();return;}
+  document.getElementById('g-info-title').textContent=k;document.getElementById('g-info-body').textContent=gInfos[k]||'説明がありません';p.style.display='block';
+}
+function gCloseInfo(){document.getElementById('g-info-panel').style.display='none';}
+function gShowDiscard(){const m=document.getElementById('discard-modal');m.style.display='flex';}
+function gCloseDiscard(){document.getElementById('discard-modal').style.display='none';}
+function gShowLog(){document.getElementById('g-log-screen').style.display='flex';}
+function gHideLog(){document.getElementById('g-log-screen').style.display='none';}
+
+function gHideLog(){document.getElementById('g-log-screen').style.display='none';}
+function gSelectPlayer(el){
+  document.querySelectorAll('#gsc0 .sel-card:not(.disabled)').forEach(c=>{c.classList.remove('selected');const ic=c.querySelectorAll('i');ic[ic.length-1].className='ti ti-circle';ic[ic.length-1].style.color='var(--color-border-secondary)';});
+  el.classList.add('selected');const ic=el.querySelectorAll('i');ic[ic.length-1].className='ti ti-check-circle';ic[ic.length-1].style.color='#1D9E75';
+  const b=document.getElementById('g-confirm-btn');b.disabled=false;b.style.opacity='1';
+}
+function gSelectDir(i){
+  [0,1].forEach(j=>{const btn=document.getElementById('gdir'+j);btn.style.borderColor=j===i?'#1D9E75':'var(--color-border-secondary)';btn.style.borderWidth=j===i?'1.5px':'0.5px';btn.querySelector('i').style.color=j===i?'#1D9E75':'var(--color-text-secondary)';});
+  const b=document.getElementById('g-roulette-btn');b.disabled=false;b.style.opacity='1';
+}
+function gSetSubWait(i){
+  ['gsw0','gsw1','gsw2'].forEach((v,j)=>document.getElementById(v).style.display=j===i?'flex':'none');
+  ['gst0','gst1','gst2'].forEach((t,j)=>document.getElementById(t).classList.toggle('active',j===i));
+}
+function gSetSubSel(i){
+  ['gsc0','gsc1','gsc2'].forEach((v,j)=>document.getElementById(v).style.display=j===i?'flex':'none');
+  ['gss0','gss1','gss2'].forEach((t,j)=>document.getElementById(t).classList.toggle('active',j===i));
+}
+let lightSelected=[];
+function lightSelect(el){
+  const boxes=el.querySelectorAll('[id^="lc-"]');
+  const box=el.querySelector('div[style*="border-radius:4px"]');
+  const idx=lightSelected.indexOf(el);
+  if(idx>=0){
+    lightSelected.splice(idx,1);
+    box.style.background='var(--color-background-primary)';
+    box.style.borderColor='var(--color-border-secondary)';
+    box.innerHTML='';
+    el.classList.remove('selected');
+  } else if(lightSelected.length<2){
+    lightSelected.push(el);
+    box.style.background='#1D9E75';
+    box.style.borderColor='#1D9E75';
+    box.innerHTML='<svg width="10" height="10" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    el.classList.add('selected');
+  }
+  const cnt=lightSelected.length;
+  const msg=document.getElementById('light-count-msg');
+  const btn=document.getElementById('light-confirm-btn');
+  if(cnt===0){msg.textContent='あと2名選んでください';}
+  else if(cnt===1){msg.textContent='あと1名選んでください';}
+  else{msg.textContent='2名選択済み';}
+  btn.disabled=cnt!==2;btn.style.opacity=cnt===2?'1':'0.35';
+}
+function setGameView(i){
+  ['ga0','ga1','ga2','ga3'].forEach((v,j)=>document.getElementById(v).style.display=j===i?'flex':'none');
+  ['gv0','gv1','gv2','gv3'].forEach((t,j)=>{const el=document.getElementById(t);el.style.background=j===i?'#16162a':'none';el.style.color=j===i?'#fff':'#9ca3af';el.style.fontWeight=j===i?'500':'400';});
+  const handMap={0:'騎士',1:'騎士・呪いの指輪',2:'騎士',3:'騎士'};
+  document.getElementById('g-hand').textContent=handMap[i];
+  // カード引いた後（i=1）のみ手札?を非表示
+  const hbtn=document.getElementById('g-hand-hbtn');
+  hbtn.style.display=i===1?'none':'inline-flex';
+  // 手札名に合わせてガイドの対象カードを更新
+  hbtn.onclick=()=>gShowInfo(handMap[i].split('・')[0]);
+  gCloseInfo();
+}
+/* ===== 画面6：エンディング ===== */
+function setEndView(i){
+  ['ea0','ea1','ea2','ea3','ea4'].forEach((v,j)=>document.getElementById(v).style.display=j===i?'flex':'none');
+  ['ev0','ev1','ev2','ev3','ev4'].forEach((t,j)=>{const el=document.getElementById(t);el.style.background=j===i?'#16162a':'none';el.style.color=j===i?'#fff':'#9ca3af';el.style.fontWeight=j===i?'500':'400';});
+}
+function setEndSub(i){
+  ['esw0','esw1','esw2'].forEach((v,j)=>document.getElementById(v).style.display=j===i?'flex':'none');
+  ['est0','est1','est2'].forEach((t,j)=>document.getElementById(t).classList.toggle('active',j===i));
+}
+function endSelectPlayer(el){
+  document.querySelectorAll('#ea1 .sel-card:not(.disabled)').forEach(c=>{c.classList.remove('selected');const ic=c.querySelectorAll('i');ic[ic.length-1].className='ti ti-circle';ic[ic.length-1].style.color='var(--color-border-secondary)';});
+  el.classList.add('selected');const ic=el.querySelectorAll('i');ic[ic.length-1].className='ti ti-check-circle';ic[ic.length-1].style.color='#1D9E75';
+  const b=document.getElementById('end-confirm-btn');b.disabled=false;b.style.opacity='1';
+}
+
+/* ===== 画面7：勝敗 ===== */
+const RESULT_DATA = [
+  { // 白雪姫陣営勝利
+    bg:'linear-gradient(135deg,#E1F5EE,#d0f5e8)', labelBg:'#E1F5EE', labelColor:'#085041', labelBorder:'#5DCAA5',
+    label:'白雪姫陣営', title:'白雪姫陣営の勝利！', titleColor:'#085041',
+    reason:'白雪姫が生存し、ロゼが死亡しました',
+    forced: false
+  },
+  { // 女王陣営勝利
+    bg:'linear-gradient(135deg,#EEEDFE,#dddcf8)', labelBg:'#EEEDFE', labelColor:'#26215C', labelBorder:'#AFA9EC',
+    label:'女王陣営', title:'女王陣営の勝利！', titleColor:'#26215C',
+    reason:'白雪姫が毒リンゴを持ったまま死亡しました',
+    forced: false
+  },
+  { // 第三陣営勝利
+    bg:'linear-gradient(135deg,#FAEEDA,#f5e0c0)', labelBg:'#FAEEDA', labelColor:'#412402', labelBorder:'#BA7517',
+    label:'第三陣営（ロゼ）', title:'第三陣営の勝利！', titleColor:'#412402',
+    reason:'白雪姫が生存し、ロゼも生存しました',
+    forced: false
+  },
+  { // 強制終了（白雪姫切断）
+    bg:'linear-gradient(135deg,#f3f4f6,#e5e7eb)', labelBg:'#EEEDFE', labelColor:'#26215C', labelBorder:'#AFA9EC',
+    label:'女王陣営', title:'ゲームが強制終了しました', titleColor:'#374151',
+    reason:'白雪姫が切断したため、女王陣営の勝利となりました',
+    forced: true
+  }
+];
+function setResultView(i){
+  ['rv0','rv1','rv2','rv3'].forEach((t,j)=>{const el=document.getElementById(t);el.style.background=j===i?'#16162a':'none';el.style.color=j===i?'#fff':'#9ca3af';el.style.fontWeight=j===i?'500':'400';});
+  const d=RESULT_DATA[i];
+  document.getElementById('r-banner').style.background=d.bg;
+  const fl=document.getElementById('r-faction-label');fl.textContent=d.label;fl.style.background=d.labelBg;fl.style.color=d.labelColor;fl.style.borderColor=d.labelBorder;
+  const rt=document.getElementById('r-result-text');rt.textContent=d.title;rt.style.color=d.titleColor;
+  document.getElementById('r-reason-text').textContent=d.reason;
+  // 強制終了の場合：プレイヤーリストの役職を非公開表示・注記を表示
+  document.getElementById('r-players-note').style.display=d.forced?'block':'none';
+  document.getElementById('r-players-normal').style.display=d.forced?'none':'flex';
+  document.getElementById('r-players-forced').style.display=d.forced?'flex':'none';
+}
+function setResultHost(i){
+  ['rh0','rh1'].forEach((t,j)=>{const el=document.getElementById(t);el.style.background=j===i?'#16162a':'none';el.style.color=j===i?'#fff':'#9ca3af';el.style.fontWeight=j===i?'500':'400';});
+  document.getElementById('r-host-btns').style.display=i===0?'flex':'none';
+  document.getElementById('r-guest-btns').style.display=i===1?'flex':'none';
+}
+
+</script>
+</body>
+</html>
